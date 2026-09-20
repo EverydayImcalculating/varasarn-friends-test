@@ -420,7 +420,7 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
         // ==========================================
-        // ⚠️ ต้องใส่ URL ของ Web App ตรงนี้ ⚠️
+        // API URL ที่คุณได้มา ใส่ไว้ตรงนี้เรียบร้อยแล้วครับ ✅
         // ==========================================
         const API_URL = "https://script.google.com/macros/s/AKfycbxbk3B29ZWT4fO0GlJ6uZAKAdH5flxfGrQ6NSDCGJCMtdbITU56KPKGmiqvKvEziM0z/exec"; 
 
@@ -838,13 +838,15 @@
             }
         }
 
-        // ====== ระบบตารางเรียน (บันทึกในเครื่อง) ======
+        // ====== ระบบตารางเรียน (บันทึกในเครื่อง แยกตามอีเมล) ======
         function addToMySchedule(code, name, sec, teacher, day, start, end) {
             if(!day || !start || !end || start === "-" || end === "-") {
                 alert("วิชานี้ไม่มีข้อมูลเวลาเรียนที่ชัดเจนครับ");
                 return;
             }
-            let schedule = JSON.parse(localStorage.getItem('my_tu_schedule')) || [];
+            
+            let scheduleKey = 'my_tu_schedule_' + currentUserEmail; // ผูกอีเมลไว้กับตารางเรียน
+            let schedule = JSON.parse(localStorage.getItem(scheduleKey)) || [];
             let existingIndex = schedule.findIndex(s => s.code === code);
             
             if(existingIndex !== -1) {
@@ -859,7 +861,7 @@
             }
             
             schedule.push({ code, name, sec, teacher, day, start, end });
-            localStorage.setItem('my_tu_schedule', JSON.stringify(schedule));
+            localStorage.setItem(scheduleKey, JSON.stringify(schedule)); // เซฟลงชื่อใหม่
             
             if(confirm(`✅ เพิ่ม ${code} ลงตารางเรียนแล้ว!\nต้องการไปดูหน้าตารางเรียนของคุณตอนนี้เลยไหม?`)) {
                 reviewModalInstance.hide();
@@ -868,7 +870,8 @@
         }
 
         function renderTimetablePage() {
-            let schedule = JSON.parse(localStorage.getItem('my_tu_schedule')) || [];
+            let scheduleKey = 'my_tu_schedule_' + currentUserEmail; // ดึงตารางตามอีเมล
+            let schedule = JSON.parse(localStorage.getItem(scheduleKey)) || [];
             let container = document.getElementById('timetableFullContent');
             
             if(schedule.length === 0) {
@@ -926,15 +929,19 @@
 
         function removeCourseFromSchedule(index, code) {
             if(!confirm(`ต้องการลบวิชา ${code} ออกจากตารางเรียนใช่ไหม?`)) return;
-            let schedule = JSON.parse(localStorage.getItem('my_tu_schedule')) || [];
+            
+            let scheduleKey = 'my_tu_schedule_' + currentUserEmail; // อ้างอิงตามอีเมล
+            let schedule = JSON.parse(localStorage.getItem(scheduleKey)) || [];
             schedule.splice(index, 1);
-            localStorage.setItem('my_tu_schedule', JSON.stringify(schedule));
+            localStorage.setItem(scheduleKey, JSON.stringify(schedule));
+            
             renderTimetablePage();
         }
 
         function clearSchedule() {
             if(confirm("คำเตือน: คุณต้องการล้างตารางเรียนทั้งหมดใช่หรือไม่?")) {
-                localStorage.removeItem('my_tu_schedule');
+                let scheduleKey = 'my_tu_schedule_' + currentUserEmail; // อ้างอิงตามอีเมล
+                localStorage.removeItem(scheduleKey);
                 renderTimetablePage();
             }
         }
