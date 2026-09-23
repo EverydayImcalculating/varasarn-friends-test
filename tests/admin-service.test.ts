@@ -74,4 +74,12 @@ describe('AdminService', () => {
       { name: 'moderate_review', args: { p_review_id: 'review-1', p_state: 'hidden', p_reason: 'ไม่เกี่ยวข้อง' } },
     ])
   })
+
+  it('submits structured offering rows only through the administrator batch RPC', async () => {
+    const calls: Array<{ name: string; args?: Record<string, unknown> }> = []
+    const service = new AdminService({ rpc: async (name, args) => { calls.push({ name, args }); return { data: [{ created_count: 1, existing_count: 0 }], error: null } } })
+    await expect(service.bulkImportOfferings([{ courseCode: 'JC100', academicYear: 2569, semester: '1', section: '2', dayOfWeek: 2, startsAt: '09:00', endsAt: '11:00' }])).resolves.toEqual({ created_count: 1, existing_count: 0 })
+    await expect(service.bulkImportOfferings([])).rejects.toThrow('อย่างน้อยหนึ่ง')
+    expect(calls[0]?.name).toBe('bulk_import_offerings')
+  })
 })
