@@ -54,3 +54,7 @@ The selected course view now uses the original modal-like overlay, gradient titl
 ### 2026-09-23 — Signed-out landing and contact modal corrected
 
 The signed-out screen now retains the branded banner and about shell while clearly presenting Google sign-in. The floating contact control opens a centered modal matching the original light header and action buttons. All Instagram destinations use the requested canonical `https://www.instagram.com/varasarn_official` URL, which returned HTTP 200 during verification. `npm test -- --run` passed 22 tests and `npm run build` passed.
+
+### 2026-09-23 — Signed-out screen matched to original reference
+
+Compared with the original reference capture, the signed-out route now hides the authenticated navigation, fills the viewport with the mint dotted background, and centers the white rounded login card. The card contains the original banner, Thai description, dashed Google prompt, and compact Google sign-in control; the action still calls the Neon Auth Google flow. `npm test -- --run` passed 22 tests, `npm run build` passed, and `git diff --check` passed.
