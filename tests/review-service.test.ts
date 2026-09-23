@@ -17,6 +17,13 @@ describe('ReviewService', () => {
     expect(calls).toEqual(['list_visible_reviews'])
   })
 
+  it('passes filters and maps approved-offering context', async () => {
+    const calls: Array<{ name: string; args?: Record<string, unknown> }> = []
+    const service = new ReviewService({ rpc: async (name, args) => { calls.push({ name, args }); return { data: [{ id: 'review-1', rating: 4, text: 'ชัดเจน', created_at: '2026-01-01', section: '2', semester: '1', academic_year: 2569, instructor_name: 'อาจารย์ ก' }], error: null } } })
+    await expect(service.listVisible('offering-1', { rating: 4, semester: '1', academicYear: 2569 })).resolves.toMatchObject([{ section: '2', semester: '1', academicYear: 2569, instructorName: 'อาจารย์ ก' }])
+    expect(calls[0]).toEqual({ name: 'list_visible_reviews', args: { p_offering_id: 'offering-1', p_rating: 4, p_semester: '1', p_academic_year: 2569 } })
+  })
+
   it('rejects a blank review before reaching the data interface', async () => {
     const rpc = async () => ({ data: null, error: null })
     const service = new ReviewService({ rpc })
