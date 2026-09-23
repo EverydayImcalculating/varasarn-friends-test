@@ -34,3 +34,7 @@ The ticket now needs owner-controlled external configuration and evidence: apply
 Linked and deployed Neon project `soft-surf-84712820` on its production branch. Managed Better Auth, the `api` Function, and Data API are active. The Data API exposes only the `api` schema, its schema cache was refreshed after applying both Drizzle migrations, and an unauthenticated RPC request was rejected for missing bearer credentials.
 
 Neon currently lists only the shared Google OAuth provider. Its shared credentials are development-only, and no trusted deployment domain exists yet. Before this ticket can close, configure the owner-managed Google OAuth client and callback, add the deployed Vercel preview and production origins, set the two public Vite endpoint variables in Vercel, then run and record the two-account browser and token-lifetime acceptance checks.
+
+### 2026-09-23 — Test deployment connected
+
+The separate Vercel test project is deployed and its public endpoint variables, Neon Auth trusted domains, and Data API CORS origins are configured. The deployed app was manually confirmed working after Google authentication. The remaining evidence is a recorded two-account review/permission check and observed copied-token lifetime after sign-out.
