@@ -17,3 +17,7 @@ Status: needs-info
 ### 2026-09-23 — Platform constraints recorded for release review
 
 The recovery guide now records that Vercel Hobby must be reassessed for organization or commercial use and documents a static-host fallback for the built Vite output. It also records Neon’s normal five-minute idle transition and requires an idle-resume request in the production-like check. Snapshot creation and isolated-branch restore instructions remain the recovery mechanism; a completed restore exercise and launch-time plan review still require owner-controlled external evidence.
+
+### 2026-09-23 — Production recovery snapshot created
+
+Created Neon snapshot `snap-wispy-river-b3otmaob` (`recovery-20260923T085735Z`) from the production branch at `2026-09-23T08:57:37Z`. The snapshot is now listed by `neon snapshots list --branch production`. An isolated restore exercise and post-restore permission/count verification remain required before cutover.
