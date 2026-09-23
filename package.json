@@ -13,6 +13,7 @@
     "import:courses": "node scripts/import-courses.mjs"
     ,"import:offerings": "node scripts/import-offerings.mjs",
     "recovery:snapshot": "bash scripts/create-recovery-snapshot.sh"
+    ,"release:gate": "bash scripts/release-gate.sh"
   },
   "dependencies": {
     "@neon/config": "^1.7.2",
