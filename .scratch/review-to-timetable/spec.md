@@ -148,7 +148,7 @@ Since the toast now carries the "added" announcement, shortened the existing suc
 
 ### 2026-09-24 — Removed the "ข้อมูลจากรีวิว" line from inside the timetable grid block
 
-The owner sent side-by-side screenshots of the production `ตารางเรียนส่วนตัว` page (`varasarn-close-friend.vercel.app`, an older deployment of this same rebuild, not the pre-rebuild legacy HTML) against the current test deployment. The production block for a course shows two lines only — `code (section)` then `start–end` — while the test deployment's block shows a third line, `ข้อมูลจากรีวิว`, whenever `entry.source === 'reported'`.
+The owner sent side-by-side screenshots of the production `ตารางเรียนส่วนตัว` page (`varasarn-close-friend.vercel.app`, assumed at the time to be an older deployment of this same rebuild rather than the pre-rebuild legacy HTML — **correction, see `.scratch/course-catalog-admin/spec.md`: that assumption looks wrong**, this URL is more likely the separate, still-live legacy/production site) against the current test deployment. The production block for a course shows two lines only — `code (section)` then `start–end` — while the test deployment's block shows a third line, `ข้อมูลจากรีวิว`, whenever `entry.source === 'reported'`.
 
 Two things in the screenshots were ambiguous enough to ask rather than guess (per the working method): whether the production screenshot's overall muted/dimmed page tone was an intentional design target or an artifact (I could not check the live production page myself — it's behind Google sign-in, which is off-limits), and whether the extra line should come out of the block. The owner confirmed: ignore the dimmed tone (not a real target), and remove the line.
 
