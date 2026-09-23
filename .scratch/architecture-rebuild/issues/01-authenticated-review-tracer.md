@@ -62,3 +62,7 @@ Compared with the original reference capture, the signed-out route now hides the
 ### 2026-09-23 — Google sign-in mark refined
 
 The sign-in control now uses the full multicolor Google G mark shown in the original reference instead of a single-color Bootstrap icon. The account row shown after choosing Google is the Google OAuth account chooser, rendered by Google during the Neon Auth redirect; the app does not fabricate a recent account before authentication.
+
+### 2026-09-23 — Course review modal aligned with original flow
+
+The selected-course view now uses the original centered modal composition: purple course header with close control, review-and-schedule heading, write-review toggle, composer card, offering cards, filters, and review cards. Schedule fields in the composer are displayed as disabled approved data because factual schedule changes remain administrator-managed; rating and experience text continue to publish through the Neon review service. `npm test -- --run` passed 22 tests, `npm run build` passed, and `git diff --check` passed.
