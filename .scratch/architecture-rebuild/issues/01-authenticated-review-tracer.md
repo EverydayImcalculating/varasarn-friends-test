@@ -74,3 +74,7 @@ Removed the manual “ใช้ตัวกรอง” button; rating, semester
 ### 2026-09-23 — Review filter and composer fields matched
 
 The review filters now use the original term choices (`ทุกเทอม`, `เทอม 1`, `เทอม 2`, `ฤดูร้อน`) and academic-year choices (`ทุกปี`, 2569 through 2565), refreshing immediately on selection. The composer now provides editable teacher and section fields plus selectable weekday and start/end time controls. These factual fields remain UI-only until an approved offering-management path persists them; review rating and text continue using the existing review API. `npm test -- --run` passed 22 tests and `npm run build` passed.
+
+### 2026-09-23 — Review term and academic year selectors completed
+
+The create-review form now includes editable `เทอมที่เรียน` and `ปีการศึกษา` selectors with the same choices as the review filters. They initialize from the selected offering and remain available for correction before submission. `npm test -- --run` passed 22 tests, `npm run build` passed, and `git diff --check` passed.
