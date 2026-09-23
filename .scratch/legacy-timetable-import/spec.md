@@ -1,6 +1,6 @@
 # Opt-in import of a browser-stored personal timetable
 
-Status: ready-for-agent
+Status: needs-info
 
 ## Problem Statement
 
@@ -69,3 +69,13 @@ After Google sign-in, the new app checks whether a legacy timetable is available
 - The existing architecture-rebuild spec says the new timetable starts empty unless users re-add offerings because the old typed-email data cannot be trusted for an automatic account transfer. This feature preserves that trust boundary: detection is automatic, while account import requires review and confirmation.
 - The current test deployment and the old deployment have different origins. The feature can only detect existing legacy storage for returning users if the rebuilt app is served from the old origin at cutover. Otherwise the user must re-add offerings or use a separately designed manual export/import flow.
 - The old browser timetable stored one entry per course code and omitted academic year and semester. The new timetable accepts only approved offerings with valid meeting times. Those differences make partial import an expected outcome.
+
+## Comments
+
+### 2026-09-23 — Local import flow implemented
+
+The signed-in app now checks the matching legacy browser key and marks the timetable navigation when it finds data. The timetable screen offers a preview and explicit confirmation. It matches course code and normalized section only against approved offerings, shows official academic period and meeting times, and leaves ambiguous, missing, meetingless, already selected, and conflicting entries out of the confirmed add set. The original browser copy is retained. Import results remain visible per entry across partial failure and retry. No database migration or new public data interface was added.
+
+The signed-in app and component tests seed old local storage and exercise the UI with mocked account-scoped timetable RPCs. They cover detection, confirmation before writes, ambiguous years, conflicts, missing meetings, malformed or inaccessible storage, another account's key, changed offerings, and retry. A live same-origin Google browser pass remains necessary before this feature can be called fully accepted. The separate Vercel test origin cannot access the old deployment's browser storage.
+
+`npm test -- --run` passed 53 tests across 11 files, `npm run build` passed, and `git diff --check` passed.

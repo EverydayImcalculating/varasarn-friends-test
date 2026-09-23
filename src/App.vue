@@ -6,6 +6,8 @@ import { ReviewService, type VisibleReview } from './services/reviews'
 import { TimetableService } from './services/timetable-client'
 import { overlaps, type Meeting } from './services/timetable'
 import { ProposalService, type OfferingProposal } from './services/proposals'
+import LegacyTimetableImport from './components/LegacyTimetableImport.vue'
+import { readLegacyTimetable, type LegacySource } from './services/legacy-timetable-import'
 
 type Course = { id: string; code: string; name_th: string; category_name: string }
 type Offering = { id: string; section: string; academic_year: number; semester: string; instructor_name: string | null }
@@ -20,6 +22,8 @@ const timetableService = computed(() => neon ? new TimetableService(neon as any)
 const proposalService = computed(() => neon ? new ProposalService(neon as any) : null)
 const accessRole = ref<'owner' | 'administrator' | null>(null); const dashboard = ref(false)
 const accountMenuOpen = ref(false); const contactOpen = ref(false); const displayName = ref('บัญชีของฉัน')
+const signedInEmail = ref('')
+const legacySource = ref<LegacySource>({ kind: 'none' })
 const timetable = ref(false); const timetableEntries = ref<TimetableEntry[]>([])
 const myReviewsScreen = ref(false); const myReviews = ref<import('./services/reviews').MyReview[]>([])
 const reviewHistoryId = ref<string | null>(null); const reviewHistory = ref<import('./services/reviews').ReviewRevision[]>([])
@@ -61,6 +65,7 @@ async function loadReviews(courseId = selected.value?.id) {
   } catch (cause) { error.value = cause instanceof Error ? cause.message : 'ไม่สามารถโหลดรีวิวได้' }
 }
 async function loadTimetable() { if (!timetableService.value) return; timetableEntries.value = await timetableService.value.list() as TimetableEntry[] }
+async function refreshTimetableAfterImport() { try { await loadTimetable() } catch (cause) { error.value = cause instanceof Error ? cause.message : 'ไม่สามารถโหลดตารางเรียนหลังนำเข้าได้' } }
 async function openTimetable() { timetable.value = true; dashboard.value = false; selected.value = null; error.value = ''; try { await loadTimetable() } catch (cause) { error.value = cause instanceof Error ? cause.message : 'ไม่สามารถโหลดตารางเรียนได้' } }
 const dayNames = ['','จันทร์','อังคาร','พุธ','พฤหัสบดี','ศุกร์','เสาร์','อาทิตย์']
 function timeValue(time: string) { return time.slice(0, 5) }
@@ -170,6 +175,8 @@ async function signOut() {
   accountMenuOpen.value = false
   contactOpen.value = false
   displayName.value = 'บัญชีของฉัน'
+  signedInEmail.value = ''
+  legacySource.value = { kind: 'none' }
 }
 onMounted(async () => {
   if (!neon) { loading.value = false; return }
@@ -179,6 +186,11 @@ onMounted(async () => {
     if (signedIn.value) {
       const user = session.data.user
       displayName.value = user.name || user.email?.split('@')[0] || 'บัญชีของฉัน'
+      signedInEmail.value = user.email ?? ''
+      if (signedInEmail.value) {
+        try { legacySource.value = readLegacyTimetable(signedInEmail.value, window.localStorage) }
+        catch { legacySource.value = { kind: 'error', message: 'อ่านข้อมูลตารางเรียนเดิมจากเบราว์เซอร์ไม่ได้' } }
+      }
       await Promise.all([loadCatalog(), loadAccess(), adminService.value?.listCategories().then((items) => { categories.value = items })])
     } else loading.value = false
   } catch (cause) {
@@ -191,7 +203,7 @@ onMounted(async () => {
 
 <template>
   <main>
-    <nav v-if="signedIn" class="navbar navbar-custom navbar-dark mb-4"><div class="container d-flex justify-content-between align-items-center"><button class="navbar-brand mb-0 h1 border-0 bg-transparent" @click="timetable = false; dashboard = false; myReviewsScreen = false; selected = null"><i class="bi bi-journal-text me-2"></i>Varasarn Close Friends</button><div class="d-flex align-items-center gap-2"><button class="btn btn-sm btn-light text-purple fw-bold rounded-pill px-3 shadow-sm" @click="openTimetable"><i class="bi bi-grid-3x3-gap-fill me-1"></i>ตารางเรียน</button><div class="account-menu d-none d-md-block"><button class="btn user-dropdown-btn dropdown-toggle" type="button" :aria-expanded="accountMenuOpen" @click="accountMenuOpen = !accountMenuOpen"><i class="bi bi-person-circle me-1"></i>{{ displayName }}</button><div v-if="accountMenuOpen" class="account-menu-list dropdown-menu-custom"><button class="dropdown-item py-2" @click="accountMenuOpen = false; openMyReviews()"><i class="bi bi-star-fill text-warning me-2"></i>รีวิวของฉัน</button><button v-if="accessRole" class="dropdown-item py-2" @click="accountMenuOpen = false; openDashboard()">แดชบอร์ดผู้ดูแล</button><hr class="dropdown-divider"><button class="dropdown-item py-2 text-danger fw-bold" @click="accountMenuOpen = false; signOut()"><i class="bi bi-box-arrow-right me-2"></i>ออกจากระบบ</button></div></div></div></div></nav>
+    <nav v-if="signedIn" class="navbar navbar-custom navbar-dark mb-4"><div class="container d-flex justify-content-between align-items-center"><button class="navbar-brand mb-0 h1 border-0 bg-transparent" @click="timetable = false; dashboard = false; myReviewsScreen = false; selected = null"><i class="bi bi-journal-text me-2"></i>Varasarn Close Friends</button><div class="d-flex align-items-center gap-2"><button class="btn btn-sm btn-light text-purple fw-bold rounded-pill px-3 shadow-sm" @click="openTimetable"><i class="bi bi-grid-3x3-gap-fill me-1"></i>ตารางเรียน<span v-if="legacySource.kind === 'found'" class="badge bg-warning text-dark ms-1">เดิม</span></button><div class="account-menu d-none d-md-block"><button class="btn user-dropdown-btn dropdown-toggle" type="button" :aria-expanded="accountMenuOpen" @click="accountMenuOpen = !accountMenuOpen"><i class="bi bi-person-circle me-1"></i>{{ displayName }}</button><div v-if="accountMenuOpen" class="account-menu-list dropdown-menu-custom"><button class="dropdown-item py-2" @click="accountMenuOpen = false; openMyReviews()"><i class="bi bi-star-fill text-warning me-2"></i>รีวิวของฉัน</button><button v-if="accessRole" class="dropdown-item py-2" @click="accountMenuOpen = false; openDashboard()">แดชบอร์ดผู้ดูแล</button><hr class="dropdown-divider"><button class="dropdown-item py-2 text-danger fw-bold" @click="accountMenuOpen = false; signOut()"><i class="bi bi-box-arrow-right me-2"></i>ออกจากระบบ</button></div></div></div></div></nav>
     <section v-if="!signedIn" class="sign-in"><div class="login-shell"><div class="login-card"><div class="login-banner"><img src="https://i.postimg.cc/FFk3NRHV/IMG-0677.jpg" alt="Varasarn Close Friends"></div><p class="login-description">พื้นที่รวบรวมรีวิววิชาเรียนและจัดตารางเรียนส่วนตัว<br>ดูแลโดย กน.วส.</p><div class="login-prompt">✨ กรุณาเข้าสู่ระบบด้วยบัญชี Google เพื่อใช้งานระบบ</div><button class="google-signin-btn" @click="enter"><svg class="google-mark" viewBox="0 0 24 24" aria-hidden="true"><path fill="#4285F4" d="M21.35 12.27c0-.72-.06-1.42-.18-2.09H12v3.96h5.24a4.48 4.48 0 0 1-1.94 2.94v2.45h3.14c1.84-1.69 2.91-4.18 2.91-7.26Z"/><path fill="#34A853" d="M12 21.7c2.63 0 4.84-.87 6.45-2.36l-3.14-2.45c-.87.58-1.98.92-3.31.92-2.54 0-4.7-1.72-5.47-4.03H3.28v2.53A9.74 9.74 0 0 0 12 21.7Z"/><path fill="#FBBC05" d="M6.53 13.78A5.86 5.86 0 0 1 6.22 12c0-.62.11-1.22.31-1.78V7.69H3.28A9.73 9.73 0 0 0 2.25 12c0 1.57.38 3.05 1.03 4.31l3.25-2.53Z"/><path fill="#EA4335" d="M12 6.19c1.43 0 2.71.49 3.72 1.45l2.79-2.79C16.84 3.19 14.63 2.3 12 2.3a9.74 9.74 0 0 0-8.72 5.39l3.25 2.53C7.3 7.91 9.46 6.19 12 6.19Z"/></svg><span>เข้าสู่ระบบด้วย Google</span></button><p v-if="error" class="text-danger mt-3 mb-0" role="alert">{{ error }}</p></div></div></section>
     <section v-else class="container pb-5">
       <div v-if="!dashboard && !timetable && !myReviewsScreen" class="mobile-account-menu d-md-none mb-3"><button class="btn user-dropdown-btn dropdown-toggle w-100 text-start d-flex justify-content-between align-items-center" type="button" :aria-expanded="accountMenuOpen" @click="accountMenuOpen = !accountMenuOpen"><span><i class="bi bi-person-circle me-1"></i>{{ displayName }}</span></button><div v-if="accountMenuOpen" class="account-menu-list dropdown-menu-custom w-100"><button class="dropdown-item py-2" @click="accountMenuOpen = false; openMyReviews()"><i class="bi bi-star-fill text-warning me-2"></i>รีวิวของฉัน</button><button v-if="accessRole" class="dropdown-item py-2" @click="accountMenuOpen = false; openDashboard()">แดชบอร์ดผู้ดูแล</button><hr class="dropdown-divider"><button class="dropdown-item py-2 text-danger fw-bold" @click="accountMenuOpen = false; signOut()"><i class="bi bi-box-arrow-right me-2"></i>ออกจากระบบ</button></div></div>
@@ -211,6 +223,7 @@ onMounted(async () => {
       <section v-else-if="timetable">
         <div class="d-flex justify-content-between align-items-center mb-4 border-bottom pb-3"><div><h1 class="h3 text-purple">ตารางเรียนส่วนตัว</h1><p class="text-muted mb-0">ตารางนี้ผูกกับบัญชีของคุณ</p></div><div class="d-flex gap-2"><button class="btn btn-outline-danger" @click="clearTimetable">ล้างตาราง</button><button class="btn btn-purple" @click="timetable = false">หน้าหลัก</button></div></div>
         <p v-if="error" class="text-danger" role="alert">{{ error }}</p>
+        <LegacyTimetableImport v-if="signedInEmail && neon" :email="signedInEmail" :catalog="courses" :client="neon as any" @imported="refreshTimetableAfterImport" />
         <div v-if="!timetableEntries.length" class="review-box text-center py-5"><h2 class="h4 text-purple">ตารางเรียนยังว่างเปล่า</h2><p class="text-muted">กลับไปที่หน้าหลัก แล้วเพิ่มกลุ่มเรียนที่ต้องการ</p><button class="btn btn-purple" @click="timetable = false">ไปเลือกวิชาเรียน</button></div>
         <template v-else><div class="timetable-container"><div class="timetable-grid"><div class="time-header-row"><div v-for="hour in 12" :key="hour" class="time-header-slot">{{ String(hour + 7).padStart(2, '0') }}:00</div></div><div v-for="day in [1,2,3,4,5,6,7]" :key="day" class="day-row"><div class="day-label">{{ dayNames[day] }}</div><div class="day-track"><div v-for="entry in timetableEntries.filter((item) => item.day_of_week === day)" :key="`${entry.offering_id}-${day}`" class="timetable-course" :class="courseColor(entry.course_code)" :style="timetableStyle(entry)"><strong>{{ entry.course_code }} ({{ entry.section }})</strong><span>{{ timeValue(entry.starts_at) }}–{{ timeValue(entry.ends_at) }}</span></div></div></div></div></div><div class="review-box"><h2 class="h5">รายวิชาที่เลือก</h2><div v-for="entry in timetableEntries.filter((item, index, items) => items.findIndex((other) => other.offering_id === item.offering_id) === index)" :key="entry.offering_id" class="d-flex justify-content-between align-items-center border-bottom py-2"><span><strong>{{ entry.course_code }}</strong> {{ entry.course_name }} · กลุ่ม {{ entry.section }}</span><button class="btn btn-sm btn-outline-danger" @click="removeFromTimetable(entry.offering_id)">ลบออก</button></div></div></template>
       </section>

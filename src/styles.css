@@ -155,5 +155,8 @@ h1, h2, h3, h4, h5, h6 { font-family: 'Kanit', sans-serif; }
 .timetable-color-3 { background: #fef3c7; border-left: 5px solid #d97706; color: #78350f; }
 .timetable-color-4 { background: #dbeafe; border-left: 5px solid #2563eb; color: #1e3a8a; }
 .timetable-color-5 { background: #f3e8ff; border-left: 5px solid #9333ea; color: #581c87; }
+.legacy-import-row { padding: 12px 0; border-top: 1px solid var(--line); overflow-wrap: anywhere; }
+.legacy-import-spacer { display: block; flex: 0 0 1rem; }
+.legacy-import .form-check-input:checked { background-color: var(--purple-700); border-color: var(--purple-700); }
 @media (max-width: 575px) { .auth-card { padding: 2rem 1.25rem; } .login-card { padding: 16px; border-radius: 22px; } .login-description { font-size: .95rem; } .container { padding-left: 1rem; padding-right: 1rem; } }
 @media (max-width: 767px) { .container > section:has(> .d-flex h1.h3) > article { display: block; width: 100%; margin-right: 0; } .container > section:has(> h1 + .review-box) { padding: 1rem .5rem 3rem; } .course-review-modal { padding: 1rem .5rem 2rem; } .course-review-header { padding: 16px 18px; } .course-review-header h1 { font-size: 1.1rem; } .course-review-body { padding: 1rem; } }
