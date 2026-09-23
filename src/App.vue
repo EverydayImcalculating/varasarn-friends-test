@@ -16,6 +16,7 @@ const adminService = computed(() => neon ? new AdminService(neon as any) : null)
 const timetableService = computed(() => neon ? new TimetableService(neon as any) : null)
 const accessRole = ref<'owner' | 'administrator' | null>(null); const dashboard = ref(false)
 const timetable = ref(false); const timetableEntries = ref<TimetableEntry[]>([])
+const myReviewsScreen = ref(false); const myReviews = ref<import('./services/reviews').MyReview[]>([])
 const members = ref<RoleAssignment[]>([]); const verifiedAccounts = ref<VerifiedAccount[]>([])
 const categories = ref<Category[]>([]); const categoryName = ref(''); const courseCode = ref(''); const courseName = ref(''); const courseCategoryId = ref('')
 const managedCourses = ref<ManagedCourse[]>([]); const editingCourseId = ref<string | null>(null)
@@ -63,6 +64,8 @@ async function addToTimetable(offering: Offering) {
 }
 async function removeFromTimetable(offeringId: string) { if (!timetableService.value) return; try { await timetableService.value.remove(offeringId); await loadTimetable() } catch (cause) { error.value = cause instanceof Error ? cause.message : 'ไม่สามารถลบรายวิชาได้' } }
 async function clearTimetable() { if (!timetableService.value || !window.confirm('ต้องการล้างตารางเรียนทั้งหมดใช่หรือไม่?')) return; try { await timetableService.value.clear(); await loadTimetable() } catch (cause) { error.value = cause instanceof Error ? cause.message : 'ไม่สามารถล้างตารางเรียนได้' } }
+async function openMyReviews() { if (!service.value) return; myReviewsScreen.value = true; timetable.value = false; dashboard.value = false; error.value = ''; try { myReviews.value = await service.value.listMine() } catch (cause) { error.value = cause instanceof Error ? cause.message : 'ไม่สามารถโหลดรีวิวของฉันได้' } }
+async function setMyReviewActive(id: string, active: boolean) { if (!service.value) return; try { await service.value.setMineActive(id, active); myReviews.value = await service.value.listMine() } catch (cause) { error.value = cause instanceof Error ? cause.message : 'ไม่สามารถเปลี่ยนสถานะรีวิวได้' } }
 async function publish() {
   if (!offerings.value[0] || !service.value) return
   error.value = ''
@@ -120,6 +123,7 @@ async function signOut() {
   accessRole.value = null
   dashboard.value = false
   timetable.value = false
+  myReviewsScreen.value = false
   members.value = []
   verifiedAccounts.value = []
   error.value = ''
@@ -129,7 +133,7 @@ onMounted(async () => { if (!neon) { loading.value = false; return }; const sess
 
 <template>
   <main>
-    <nav class="navbar navbar-custom"><div class="container"><button class="navbar-brand border-0 bg-transparent" @click="timetable = false; dashboard = false; selected = null">Varasarn Close Friends</button><div v-if="signedIn" class="d-flex gap-2"><button class="btn btn-light rounded-pill text-purple" @click="openTimetable">ตารางเรียน</button><button v-if="accessRole" class="btn btn-outline-light rounded-pill" @click="openDashboard">แดชบอร์ด</button><button class="btn btn-light rounded-pill" @click="signOut">ออกจากระบบ</button></div></div></nav>
+    <nav class="navbar navbar-custom"><div class="container"><button class="navbar-brand border-0 bg-transparent" @click="timetable = false; dashboard = false; myReviewsScreen = false; selected = null">Varasarn Close Friends</button><div v-if="signedIn" class="d-flex gap-2"><button class="btn btn-light rounded-pill text-purple" @click="openTimetable">ตารางเรียน</button><button class="btn btn-light rounded-pill text-purple" @click="openMyReviews">รีวิวของฉัน</button><button v-if="accessRole" class="btn btn-outline-light rounded-pill" @click="openDashboard">แดชบอร์ด</button><button class="btn btn-light rounded-pill" @click="signOut">ออกจากระบบ</button></div></div></nav>
     <section v-if="!signedIn" class="sign-in container"><div class="auth-card text-center"><h1>รีวิววิชาเรียนที่ไว้ใจได้</h1><p>เข้าสู่ระบบด้วย Google เพื่อดูรายวิชาและเขียนรีวิวแบบไม่แสดงตัวตน</p><button class="btn btn-purple px-4" @click="enter">เข้าสู่ระบบด้วย Google</button><p v-if="error" class="text-danger mt-3" role="alert">{{ error }}</p></div></section>
     <section v-else class="container py-4">
       <section v-if="dashboard" class="review-box">
@@ -148,6 +152,7 @@ onMounted(async () => { if (!neon) { loading.value = false; return }; const sess
         <div v-if="!timetableEntries.length" class="review-box text-center py-5"><h2 class="h4 text-purple">ตารางเรียนยังว่างเปล่า</h2><p class="text-muted">กลับไปที่หน้าหลัก แล้วเพิ่มกลุ่มเรียนที่ต้องการ</p><button class="btn btn-purple" @click="timetable = false">ไปเลือกวิชาเรียน</button></div>
         <template v-else><div class="timetable-container"><div class="timetable-grid"><div class="time-header-row"><div v-for="hour in 12" :key="hour" class="time-header-slot">{{ String(hour + 7).padStart(2, '0') }}:00</div></div><div v-for="day in [1,2,3,4,5,6,7]" :key="day" class="day-row"><div class="day-label">{{ dayNames[day] }}</div><div class="day-track"><div v-for="entry in timetableEntries.filter((item) => item.day_of_week === day)" :key="`${entry.offering_id}-${day}`" class="timetable-course" :class="courseColor(entry.course_code)" :style="timetableStyle(entry)"><strong>{{ entry.course_code }} ({{ entry.section }})</strong><span>{{ timeValue(entry.starts_at) }}–{{ timeValue(entry.ends_at) }}</span></div></div></div></div></div><div class="review-box"><h2 class="h5">รายวิชาที่เลือก</h2><div v-for="entry in timetableEntries.filter((item, index, items) => items.findIndex((other) => other.offering_id === item.offering_id) === index)" :key="entry.offering_id" class="d-flex justify-content-between align-items-center border-bottom py-2"><span><strong>{{ entry.course_code }}</strong> {{ entry.course_name }} · กลุ่ม {{ entry.section }}</span><button class="btn btn-sm btn-outline-danger" @click="removeFromTimetable(entry.offering_id)">ลบออก</button></div></div></template>
       </section>
+      <section v-else-if="myReviewsScreen"><div class="d-flex justify-content-between align-items-center mb-4 border-bottom pb-3"><div><h1 class="h3 text-purple">รีวิวของฉัน</h1><p class="text-muted mb-0">จัดการเฉพาะรีวิวที่คุณเขียน</p></div><button class="btn btn-purple" @click="myReviewsScreen = false">หน้าหลัก</button></div><p v-if="error" class="text-danger" role="alert">{{ error }}</p><p v-if="!myReviews.length" class="review-box text-muted">คุณยังไม่มีรีวิว</p><article v-for="review in myReviews" :key="review.id" class="review-box"><div class="d-flex justify-content-between"><span class="stars">{{ '★'.repeat(review.rating) }}</span><small>{{ review.active ? 'เผยแพร่แล้ว' : 'ถอนการเผยแพร่' }}</small></div><p>{{ review.text }}</p><button v-if="review.active" class="btn btn-sm btn-outline-danger" @click="setMyReviewActive(review.id, false)">ถอนรีวิว</button><button v-else class="btn btn-sm btn-purple" @click="setMyReviewActive(review.id, true)">เผยแพร่อีกครั้ง</button></article></section>
       <template v-else>
         <div class="about mb-4"><h2>เกี่ยวกับ Varasarn Close Friends</h2><p>พื้นที่รวบรวมความคิดเห็นจากนักศึกษาคณะวารสารศาสตร์และสื่อสารมวลชน</p></div>
         <p v-if="loading">กำลังโหลดข้อมูล...</p><p v-else-if="error" class="text-danger" role="alert">{{ error }}</p>
