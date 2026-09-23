@@ -83,6 +83,21 @@ describe('AdminService', () => {
     expect(calls[0]?.name).toBe('bulk_import_offerings')
   })
 
+  it('uses the administrator RPCs to list and resolve offering proposals without exposing proposer identity', async () => {
+    const calls: Array<{ name: string; args?: Record<string, unknown> }> = []
+    const service = new AdminService({ rpc: async (name, args) => { calls.push({ name, args }); return { data: name === 'list_pending_offering_proposals' ? [{ id: 'proposal-1', course_code: 'JC100', academic_year: 2569, semester: '1', section: '2', instructor_name: 'อาจารย์เอ' }] : null, error: null } } })
+    const pending = await service.listPendingOfferingProposals()
+    expect(pending).toEqual([{ id: 'proposal-1', course_code: 'JC100', academic_year: 2569, semester: '1', section: '2', instructor_name: 'อาจารย์เอ' }])
+    expect(pending[0]).not.toHaveProperty('proposer_user_id')
+    await service.resolveOfferingProposal('proposal-1', true)
+    await service.resolveOfferingProposal('proposal-1', false)
+    expect(calls).toEqual([
+      { name: 'list_pending_offering_proposals', args: undefined },
+      { name: 'resolve_offering_proposal', args: { p_proposal_id: 'proposal-1', p_approve: true } },
+      { name: 'resolve_offering_proposal', args: { p_proposal_id: 'proposal-1', p_approve: false } },
+    ])
+  })
+
   it('lists a course\'s approved offerings and corrects one through the administrator update RPC', async () => {
     const calls: Array<{ name: string; args?: Record<string, unknown> }> = []
     const service = new AdminService({ rpc: async (name, args) => { calls.push({ name, args }); return { data: name === 'list_approved_offerings' ? [{ id: 'offering-1', section: '1', academic_year: 2569, semester: '1', instructor_name: 'อาจารย์เอ' }] : null, error: null } } })

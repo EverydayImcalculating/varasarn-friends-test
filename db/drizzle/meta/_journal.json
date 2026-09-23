@@ -183,6 +183,13 @@
       "when": 1790162453912,
       "tag": "0025_correct_offering",
       "breakpoints": true
+    },
+    {
+      "idx": 26,
+      "version": "7",
+      "when": 1790163240915,
+      "tag": "0026_offering_proposal_fixes",
+      "breakpoints": true
     }
   ]
 }

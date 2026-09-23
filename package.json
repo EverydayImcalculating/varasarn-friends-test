@@ -13,6 +13,7 @@
     "import:courses": "node scripts/import-courses.mjs",
     "import:offerings": "node scripts/import-offerings.mjs",
     "test:offering-import": "node scripts/verify-offering-import.mjs",
+    "test:offering-proposals": "node scripts/verify-offering-proposals.mjs",
     "recovery:snapshot": "bash scripts/create-recovery-snapshot.sh",
     "release:gate": "bash scripts/release-gate.sh"
   },
