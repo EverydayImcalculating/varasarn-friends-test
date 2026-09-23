@@ -6,13 +6,13 @@ Blocked by: 05 Merge duplicate courses; 06 Approved offerings and academic perio
 
 Status: needs-info
 
-- [ ] A signed-in user can submit an offering proposal for an existing active course and see their own pending, approved, or rejected proposals.
-- [ ] Proposing a missing official timetable offering is a separate, optional flow from writing a review, with visible validation and status feedback.
-- [ ] The administrator dashboard lists pending proposals and permits approval or rejection with an auditable actor and time.
-- [ ] Approval checks for an equivalent approved offering and resolves a duplicate without creating another canonical section; approval and status update are atomic.
-- [ ] Pending and rejected proposals do not appear as approved timetable offerings and cannot be selected for a timetable; they do not block course reviews with student-reported class details.
+- [x] A signed-in user can submit an offering proposal for an existing active course and see their own pending, approved, or rejected proposals.
+- [x] Proposing a missing official timetable offering is a separate, optional flow from writing a review, with visible validation and status feedback.
+- [x] The administrator dashboard lists pending proposals and permits approval or rejection with an auditable actor and time.
+- [x] Approval checks for an equivalent approved offering and resolves a duplicate without creating another canonical section; approval and status update are atomic.
+- [x] Pending and rejected proposals do not appear as approved timetable offerings and cannot be selected for a timetable; they do not block course reviews with student-reported class details.
 - [ ] Ordinary users cannot approve, reject, or inspect another user's private proposal data through direct requests; browser and data-interface tests cover the workflow.
-- [ ] Course merge preserves proposal references and the proposer's status view.
+- [x] Course merge preserves proposal references and the proposer's status view.
 
 ## Comments
 
@@ -42,3 +42,9 @@ Added migration `0026_offering_proposal_fixes.sql`: `merge_course` now also upda
 Added admin-service unit tests for `listPendingOfferingProposals`/`resolveOfferingProposal` (there were none before) in [tests/admin-service.test.ts](../../../tests/admin-service.test.ts), and a new isolated-branch verification script, [scripts/verify-offering-proposals.mjs](../../../scripts/verify-offering-proposals.mjs) (`npm run test:offering-proposals`), following the same pattern as `verify-offering-import.mjs`. Ran it against a fresh branch (`test-offering-proposals-20260923`, `br-bold-thunder-b32zlvzt`) forked from production with all 26 migrations applied, inside a single rolled-back transaction: confirmed `resolve_offering_proposal` is denied without an administrator identity; confirmed a proposal with section `sec1` resolves onto an existing `" Sec 1 "` offering without creating a duplicate, and its `status`/`resolved_at` are set correctly; confirmed approval of a proposal for an archived course is rejected with `active course required`; and confirmed `merge_course` reassigns a source-course proposal's `course_id` to the target course. All four checks passed. `npm test -- --run` passed 25 tests and `npm run build` passed.
 
 **Not yet done:** migration `0026_offering_proposal_fixes.sql` has not been applied to the production Neon branch (the fixes only exist on the throwaway test branch so far), so production still has the two gaps above. Live browser acceptance of the workflow with two real signed-in Google accounts — a student proposing and tracking status, an administrator approving/rejecting, a non-administrator denied direct access — also remains open, for the same reason recorded on Tickets 01, 06, and 09: no Google test-account credentials are available to this session. Status stays `needs-info`.
+
+### 2026-09-23 — Migration 0026 applied to production; fixes confirmed live
+
+With owner approval, ran `npm run db:migrate` against the production branch and `neon data-api refresh-schema --project-id soft-surf-84712820 --branch production`. A read-only check confirms the applied-migrations log advanced from 26 to 27 rows, and the live `api.merge_course` and `api.resolve_offering_proposal` function bodies now contain the `offering_proposals` reassignment, the `regexp_replace` normalization, and the `active course required` check respectively. Rebuilt commit `9c926b9` locally and confirmed the deployed test app (`https://varasarn-friends-test-tau.vercel.app/`) serves the identical asset hashes. `npm test -- --run` passed 25 tests and `npm run build` passed on this commit.
+
+Checked off every checklist item whose capability is now implemented and live: submission and self-scoped status, the separate optional flow, the admin listing/resolution with auditable actor and time, atomic normalized-duplicate-safe approval, and merge carry-forward. Left the direct-request/browser item unchecked — the RPC gating and data-interface behavior are verified (isolated-branch script above plus the admin-service unit tests), but the "browser" half of that item and the rest of this ticket's cross-account walkthrough still need a real signed-in Google session, which remains unavailable to this session. Status stays `needs-info` for that reason alone.
