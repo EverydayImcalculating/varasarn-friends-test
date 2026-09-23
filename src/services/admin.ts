@@ -4,6 +4,7 @@ export type VerifiedAccount = { id: string; name: string; email: string }
 export type RoleAssignment = VerifiedAccount & { role: 'owner' | 'administrator'; grantedAt: string }
 export type CourseDraft = { code: string; nameTh: string; categoryId: string }
 export type Category = { id: string; name: string }
+export type ManagedCourse = { id: string; code: string; name_th: string; category_id: string; category_name: string; status: string }
 
 export class AdminService {
   constructor(private readonly client: RpcClient) {}
@@ -57,6 +58,12 @@ export class AdminService {
   async archiveCourse(courseId: string): Promise<void> {
     const { error } = await this.client.rpc('archive_course', { p_course_id: courseId })
     if (error) throw new Error(error.message)
+  }
+
+  async listManageableCourses(): Promise<ManagedCourse[]> {
+    const { data, error } = await this.client.rpc('list_manageable_courses')
+    if (error) throw new Error(error.message)
+    return (data ?? []) as ManagedCourse[]
   }
 
   async updateCourse(courseId: string, course: CourseDraft): Promise<void> {
