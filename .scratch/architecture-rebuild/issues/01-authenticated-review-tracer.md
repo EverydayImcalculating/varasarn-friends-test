@@ -98,3 +98,7 @@ The Vue session bootstrap now catches Neon Auth session and initial protected-da
 ### 2026-09-23 — Review submission silent guard fixed
 
 The review composer no longer silently returns when the selected course has no offering or the Neon review client is unavailable. It now shows a Thai error message, disables submission while the request is running, and changes the button label to `กำลังบันทึก...`; valid submissions still call `create_review` and refresh the anonymous review list. `npm test -- --run` passed 22 tests and `npm run build` passed.
+
+### 2026-09-23 — Review button made actionable
+
+The composer no longer disables the save button merely because the offering list is empty. It remains clickable until a request starts, allowing the explicit missing-offering error to be shown and making the failure diagnosable from the deployed UI. `npm test -- --run` passed 22 tests and `npm run build` passed.
