@@ -56,4 +56,16 @@ describe('ReviewService', () => {
       { name: 'set_my_review_active', args: { p_review_id: 'review-1', p_active: false } },
     ])
   })
+
+  it('lists an author\'s own review revision history through the self-scoped RPC', async () => {
+    const calls: Array<{ name: string; args?: Record<string, unknown> }> = []
+    const service = new ReviewService({
+      rpc: async (name, args) => {
+        calls.push({ name, args })
+        return { data: [{ id: 'revision-1', rating: 4, text: 'เดิม', revised_at: '2026-01-01' }], error: null }
+      },
+    })
+    await expect(service.listMyRevisions('review-1')).resolves.toEqual([{ id: 'revision-1', rating: 4, text: 'เดิม', revisedAt: '2026-01-01' }])
+    expect(calls).toEqual([{ name: 'list_my_review_revisions', args: { p_review_id: 'review-1' } }])
+  })
 })

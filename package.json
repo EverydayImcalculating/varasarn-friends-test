@@ -15,6 +15,7 @@
     "test:offering-import": "node scripts/verify-offering-import.mjs",
     "test:offering-proposals": "node scripts/verify-offering-proposals.mjs",
     "test:review-discovery": "node scripts/verify-review-discovery.mjs",
+    "test:review-lifecycle": "node scripts/verify-review-lifecycle.mjs",
     "recovery:snapshot": "bash scripts/create-recovery-snapshot.sh",
     "release:gate": "bash scripts/release-gate.sh"
   },

@@ -6,6 +6,7 @@ export type VisibleReview = { id: string; rating: number; text: string; createdA
 export type ReviewFilters = { rating?: number; semester?: string; academicYear?: number }
 export type ReportedClass = { academicYear: number; semester: string; section: string; instructorName: string; dayOfWeek: number; startsAt: string; endsAt: string }
 export type MyReview = { id: string; courseId: string; offeringId: string | null; rating: number; text: string; active: boolean; createdAt: string }
+export type ReviewRevision = { id: string; rating: number; text: string; revisedAt: string }
 
 export class ReviewService {
   constructor(private readonly client: RpcClient) {}
@@ -45,5 +46,11 @@ export class ReviewService {
   async setMineActive(id: string, active: boolean): Promise<void> {
     const { error } = await this.client.rpc('set_my_review_active', { p_review_id: id, p_active: active })
     if (error) throw new Error(error.message)
+  }
+
+  async listMyRevisions(reviewId: string): Promise<ReviewRevision[]> {
+    const { data, error } = await this.client.rpc('list_my_review_revisions', { p_review_id: reviewId })
+    if (error) throw new Error(error.message)
+    return ((data ?? []) as Array<{ id: string; rating: number; text: string; revised_at: string }>).map((revision) => ({ id: revision.id, rating: revision.rating, text: revision.text, revisedAt: revision.revised_at }))
   }
 }
