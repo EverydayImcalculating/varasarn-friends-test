@@ -94,3 +94,7 @@ The deployed Neon Data API rejected an unauthenticated catalog RPC with HTTP 400
 ### 2026-09-23 — Session bootstrap failure state hardened
 
 The Vue session bootstrap now catches Neon Auth session and initial protected-data failures, clears the signed-in state, stops loading, and shows an error message instead of leaving a blank or indefinitely loading screen. `npm test -- --run` passed 22 tests, `npm run build` passed, and `git diff --check` passed.
+
+### 2026-09-23 — Review submission silent guard fixed
+
+The review composer no longer silently returns when the selected course has no offering or the Neon review client is unavailable. It now shows a Thai error message, disables submission while the request is running, and changes the button label to `กำลังบันทึก...`; valid submissions still call `create_review` and refresh the anonymous review list. `npm test -- --run` passed 22 tests and `npm run build` passed.
