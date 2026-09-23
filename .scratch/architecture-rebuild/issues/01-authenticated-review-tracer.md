@@ -42,3 +42,7 @@ The separate Vercel test project is deployed and its public endpoint variables, 
 ### 2026-09-23 — Public deployment verification blocked by Vercel SSO
 
 An unauthenticated request to the stable test deployment alias redirects to Vercel SSO rather than returning the Vite application shell. Public Google sign-in and browser acceptance cannot be reverified until the deployment’s Vercel protection is disabled for the intended test audience or an authorized reviewer session is used. This does not change Neon Auth or Data API configuration.
+
+### 2026-09-23 — Original home interface restored in Vue
+
+The original UI source is `git show 0b1b1c8^:index.html`; `old-repo/index.html` is a later Vite shell. The Vue home page now uses the original banner, about text, student-committee label, contact links, heading, search field, medium-screen three-column cards, purple design tokens, Prompt/Kanit fonts, and Bootstrap Icons. The navigation and contact controls remain Vue-managed. `npm test -- --run` passed 22 tests and `npm run build` passed. Course-detail modal, My Reviews layout, and live visual/browser acceptance still need comparison; this does not close Ticket 01.
