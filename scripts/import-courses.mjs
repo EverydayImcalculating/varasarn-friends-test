@@ -1,8 +1,12 @@
 import XLSX from 'xlsx'
+import { readFile } from 'node:fs/promises'
 
 const [file, mode = '--dry-run'] = process.argv.slice(2)
 if (!file) throw new Error('Usage: npm run import:courses -- <workbook.xlsx> [--commit]')
-const rows = XLSX.utils.sheet_to_json(XLSX.readFile(file).Sheets.Courses, { header: 1, defval: '' })
+const rows = file.endsWith('.json')
+  ? JSON.parse(await readFile(file, 'utf8'))
+  : XLSX.utils.sheet_to_json(XLSX.readFile(file).Sheets.Courses, { header: 1, defval: '' })
+if (!Array.isArray(rows)) throw new Error('Course export must be an array of rows')
 const seen = new Map(); const accepted = []; const rejected = []
 rows.forEach((row, index) => {
   const [rawCode, rawName, rawCategory] = row
