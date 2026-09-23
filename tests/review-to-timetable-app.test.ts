@@ -127,14 +127,15 @@ describe('review to personal timetable', () => {
     const wrapper = await openReview()
     const review = wrapper.get('.review-card')
     expect(review.text()).toContain('อังคาร 13:00–15:00')
-    expect(review.text()).toContain('พฤหัสบดี 09:30–12:30')
+    expect(review.text()).toContain('วันพฤหัสบดี')
+    expect(review.text()).toContain('09:30 - 12:30 น.')
     wrapper.unmount()
   })
 
   it('offers a private review schedule when the approved class has no meeting', async () => {
     fixture.meetings = []
     const wrapper = await openReview()
-    expect(wrapper.get('.review-card').text()).toContain('ข้อมูลเวลาเรียนจากรีวิว')
+    expect(wrapper.get('.review-card').text()).not.toContain('ข้อมูลกลุ่มเรียนที่อนุมัติ')
     expect(wrapper.find('.review-card button').exists()).toBe(true)
     wrapper.unmount()
   })
@@ -142,7 +143,7 @@ describe('review to personal timetable', () => {
   it('offers only a private review schedule when multiple approved classes match a review', async () => {
     fixture.offerings.push({ id: 'offering-2', section: '320001', academic_year: 2568, semester: '1', instructor_name: 'อ. อ้อม' })
     const wrapper = await openReview()
-    expect(wrapper.get('.review-card').text()).toContain('ข้อมูลเวลาเรียนจากรีวิว')
+    expect(wrapper.get('.review-card').text()).not.toContain('ข้อมูลกลุ่มเรียนที่อนุมัติ')
     expect(wrapper.find('.review-card button').exists()).toBe(true)
     wrapper.unmount()
   })
