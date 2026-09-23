@@ -60,3 +60,9 @@ Verification:
 Edit and withdraw controls exist only on My Reviews, which lists `list_my_reviews` (author-scoped), so a legacy review never appears there. The course detail page reads `list_visible_reviews`. Item 4 is verified at the data layer and by code review, but stays unchecked until a signed-in browser session shows imported reviews.
 
 **Not yet done:** migration `0031` is not applied to production. The production import itself should use a fresh final export at cutover (spec: "not solely the workbook copy in the repo"), so the repository snapshot was deliberately not imported into production. Status stays `needs-info`.
+
+### 2026-09-23 — Migration 0031 applied to production; core import confirmed unreachable by any client role
+
+The owner ran `npm run db:migrate` against production (`drizzle.__drizzle_migrations` row count went from 31 to 32) and `neon data-api refresh-schema --project-id soft-surf-84712820 --branch production`. A read-only check against production confirms `app_private.import_legacy_review_rows` exists and has no grantee but `db_owner` (not `authenticated`, not `PUBLIC`), and `legacy_import_audit.via` exists. The deployed app at `https://varasarn-friends-test-tau.vercel.app/` still serves `assets/index-AamsPgHY.js` and `assets/index-yJJw95GY.css`, matching commit `3d9535c` (no frontend changes in this ticket).
+
+No legacy reviews have been imported into production — that import is deliberately deferred to a fresh final export at cutover, per the spec. Status stays `needs-info`.
