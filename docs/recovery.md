@@ -11,4 +11,6 @@ neon snapshots list --branch production
 
 Restore into an isolated Neon branch first, then verify catalog/review counts, Data API exposure, and authenticated access. If cutover fails, stop new writes and return to the old export read-only before restoring.
 
-Re-check current Vercel eligibility and Neon quotas before launch. If Vercel is unsuitable, deploy the Vite `dist/` output to another static host and register its origin in Neon.
+Re-check current Vercel eligibility and Neon quotas before launch. The Vercel Hobby plan is intended for personal, noncommercial work; choose an eligible plan before using this project for an organization or commercial service. If Vercel is unsuitable, deploy the Vite `dist/` output to another static host and register its origin in Neon.
+
+Neon computes normally transition to idle after five minutes without activity and wake on the next request. Test the first request after an idle period in the production-like release check. Keep the production recovery snapshot access limited to project owners; it contains the complete database state.
