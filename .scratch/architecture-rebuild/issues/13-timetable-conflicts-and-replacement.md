@@ -32,3 +32,9 @@ Verified on an isolated branch (`test-timetable-20260923`, `br-ancient-leaf-b33r
 All 9 checks in `verify-timetable.mjs` passed, including the pre-existing isolation, merge-preservation, and grant checks (now also covering `replace_my_timetable_offering` and `list_approved_offering_meetings` by name). `npm test -- --run` passed 30 tests, `npm run build` passed, `git diff --check` passed.
 
 **Not yet applied to production** — migration `0030` exists locally and is verified on the isolated branch only. Item 4's browser-acceptance half (warnings and replacement exercised in a real browser) still needs a real Google session, the same blocker as every other open ticket. Status stays `needs-info`.
+
+### 2026-09-23 — Migration 0030 applied to production; grants and live function body confirmed
+
+With owner approval, ran `npm run db:migrate` against production (`drizzle.__drizzle_migrations` row count went from 30 to 31) and `neon data-api refresh-schema --project-id soft-surf-84712820 --branch production`. A read-only check against production confirms `api.replace_my_timetable_offering`'s live body now requires `courses.status='approved'` and `EXISTS(offering_meetings)` alongside `offerings.status='approved'`, closing the bypass described above. All six timetable functions (`list_my_timetable`, `add_my_timetable_offering`, `remove_my_timetable_offering`, `clear_my_timetable`, `replace_my_timetable_offering`, `list_approved_offering_meetings`) are granted only to `authenticated` and `db_owner`, with no `PUBLIC` grant on any of them. The deployed app at `https://varasarn-friends-test-tau.vercel.app/` serves `assets/index-AamsPgHY.js` and `assets/index-yJJw95GY.css`, matching a local build of commit `27b9c82`.
+
+Live browser acceptance (conflict warnings, deliberate confirmation, and section replacement exercised in a real browser) still needs a real Google session. Status stays `needs-info`.
