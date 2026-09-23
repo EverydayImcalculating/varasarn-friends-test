@@ -4,7 +4,7 @@
 
 Blocked by: 01 Authenticated catalog and anonymous review tracer
 
-Status: ready-for-agent
+Status: needs-info
 
 - [ ] The initial owner is established through a controlled, documented bootstrap tied to a verified account; possession of an email string or browser-side setting does not grant a role.
 - [ ] The owner can find a verified account, grant or revoke its administrator role, and see the resulting membership in the dashboard.
