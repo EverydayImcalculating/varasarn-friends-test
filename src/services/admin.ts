@@ -6,6 +6,8 @@ export type CourseDraft = { code: string; nameTh: string; categoryId: string }
 export type Category = { id: string; name: string }
 export type ManagedCourse = { id: string; code: string; name_th: string; category_id: string; category_name: string; status: string }
 export type MergePreview = { source_code: string; target_code: string; offerings_to_move: number; reviews_preserved: number }
+export type AcademicPeriod = { id: string; academic_year: number; semester: string }
+export type OfferingDraft = { courseId: string; academicYear: number; semester: string; section: string; instructorName: string; day: number; startsAt: string; endsAt: string }
 
 export class AdminService {
   constructor(private readonly client: RpcClient) {}
@@ -94,6 +96,10 @@ export class AdminService {
     const { error } = await this.client.rpc('merge_course', { p_source_course_id: sourceCourseId, p_target_course_id: targetCourseId })
     if (error) throw new Error(error.message)
   }
+
+  async listAcademicPeriods(): Promise<AcademicPeriod[]> { const { data, error } = await this.client.rpc('list_academic_periods'); if (error) throw new Error(error.message); return (data ?? []) as AcademicPeriod[] }
+  async createAcademicPeriod(year: number, semester: string): Promise<void> { const { error } = await this.client.rpc('create_academic_period', { p_academic_year: year, p_semester: semester.trim() }); if (error) throw new Error(error.message) }
+  async createOffering(draft: OfferingDraft): Promise<void> { const { error } = await this.client.rpc('create_offering', { p_course_id: draft.courseId, p_academic_year: draft.academicYear, p_semester: draft.semester.trim(), p_section: draft.section.trim(), p_instructor_name: draft.instructorName.trim(), p_day: draft.day, p_starts: draft.startsAt, p_ends: draft.endsAt }); if (error) throw new Error(error.message) }
 
   private async changeRole(name: string, userId: string): Promise<void> {
     const { error } = await this.client.rpc(name, { p_user_id: userId })
