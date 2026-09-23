@@ -11,7 +11,8 @@ export type OfferingDraft = { courseId: string; academicYear: number; semester: 
 export type PendingProposal = { id: string; course_code: string; academic_year: number; semester: string; section: string; instructor_name: string | null }
 export type ModerationReview = { id: string; rating: number; text: string; author_active: boolean; moderation_state: 'visible' | 'hidden' | 'removed'; created_at: string }
 export type BulkOfferingRow = { courseCode: string; academicYear: number; semester: string; section: string; instructorName?: string; dayOfWeek: number; startsAt: string; endsAt: string }
-export type BulkOfferingResult = { created_count: number; existing_count: number }
+export type BulkOfferingResult = { created_count: number; updated_count: number; existing_count: number }
+export type OfferingImportPreview = { rowNumber: number; courseCode: string; academicYear: number | null; semester: string; section: string; instructorName: string | null; dayOfWeek: number | null; startsAt: string; endsAt: string; valid: boolean; action: 'create' | 'update' | 'existing' | null; reason: string | null; offeringId: string | null }
 
 export class AdminService {
   constructor(private readonly client: RpcClient) {}
@@ -109,6 +110,7 @@ export class AdminService {
   async listModerationReviews(state?: ModerationReview['moderation_state']): Promise<ModerationReview[]> { const { data, error } = await this.client.rpc('list_moderation_reviews', { p_state: state ?? null }); if (error) throw new Error(error.message); return (data ?? []) as ModerationReview[] }
   async moderateReview(id: string, state: ModerationReview['moderation_state'], reason: string): Promise<void> { if (!reason.trim()) throw new Error('กรุณาระบุเหตุผล'); const { error } = await this.client.rpc('moderate_review', { p_review_id: id, p_state: state, p_reason: reason.trim() }); if (error) throw new Error(error.message) }
   async bulkImportOfferings(rows: BulkOfferingRow[]): Promise<BulkOfferingResult> { if (!rows.length) throw new Error('ต้องมีข้อมูลกลุ่มเรียนอย่างน้อยหนึ่งรายการ'); const { data, error } = await this.client.rpc('bulk_import_offerings', { p_rows: rows }); if (error) throw new Error(error.message); const result = (data as BulkOfferingResult[] | null)?.[0]; if (!result) throw new Error('ไม่พบผลการนำเข้า'); return result }
+  async previewOfferingImport(rows: unknown[]): Promise<OfferingImportPreview[]> { const { data, error } = await this.client.rpc('preview_offering_import', { p_rows: rows }); if (error) throw new Error(error.message); return ((data ?? []) as Array<{ row_number: number; course_code: string; academic_year: number | null; semester: string; section: string; instructor_name: string | null; day_of_week: number | null; starts_at: string; ends_at: string; valid: boolean; action: OfferingImportPreview['action']; reason: string | null; offering_id: string | null }>).map((row) => ({ rowNumber: row.row_number, courseCode: row.course_code, academicYear: row.academic_year, semester: row.semester, section: row.section, instructorName: row.instructor_name, dayOfWeek: row.day_of_week, startsAt: row.starts_at, endsAt: row.ends_at, valid: row.valid, action: row.action, reason: row.reason, offeringId: row.offering_id })) }
 
   private async changeRole(name: string, userId: string): Promise<void> {
     const { error } = await this.client.rpc(name, { p_user_id: userId })

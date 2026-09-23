@@ -12,6 +12,7 @@
     "db:migrate": "drizzle-kit migrate",
     "import:courses": "node scripts/import-courses.mjs",
     "import:offerings": "node scripts/import-offerings.mjs",
+    "test:offering-import": "node scripts/verify-offering-import.mjs",
     "recovery:snapshot": "bash scripts/create-recovery-snapshot.sh",
     "release:gate": "bash scripts/release-gate.sh"
   },
