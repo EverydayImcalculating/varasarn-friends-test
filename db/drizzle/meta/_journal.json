@@ -134,6 +134,13 @@
       "when": 1790140600000,
       "tag": "0018_list_offering_proposals",
       "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "7",
+      "when": 1790140800000,
+      "tag": "0019_bulk_offering_import",
+      "breakpoints": true
     }
   ]
 }
