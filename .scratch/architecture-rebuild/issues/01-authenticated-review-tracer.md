@@ -66,3 +66,7 @@ The sign-in control now uses the full multicolor Google G mark shown in the orig
 ### 2026-09-23 — Course review modal aligned with original flow
 
 The selected-course view now uses the original centered modal composition: purple course header with close control, review-and-schedule heading, write-review toggle, composer card, offering cards, filters, and review cards. Schedule fields in the composer are displayed as disabled approved data because factual schedule changes remain administrator-managed; rating and experience text continue to publish through the Neon review service. `npm test -- --run` passed 22 tests, `npm run build` passed, and `git diff --check` passed.
+
+### 2026-09-23 — Review controls simplified for visual match
+
+Removed the manual “ใช้ตัวกรอง” button; rating, semester, and academic-year filters now reload reviews when changed. The “ไม่พบกลุ่มเรียนที่ต้องการ?” proposal panel is hidden temporarily while the review flow is matched to the original interface; its service and backend remain available for a later pass. `npm test -- --run` passed 22 tests and `npm run build` passed.
