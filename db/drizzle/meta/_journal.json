@@ -71,6 +71,13 @@
       "when": 1790138800000,
       "tag": "0009_offering_proposals",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1790139000000,
+      "tag": "0010_review_discovery",
+      "breakpoints": true
     }
   ]
 }
