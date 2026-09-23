@@ -35,4 +35,12 @@ describe('AdminService', () => {
       args: { p_code: 'JC101', p_name_th: 'การเขียนข่าว', p_category_id: 'category-1' },
     }])
   })
+
+  it('uses the category RPCs for administrator-managed categories', async () => {
+    const calls: Array<{ name: string; args?: Record<string, unknown> }> = []
+    const service = new AdminService({ rpc: async (name, args) => { calls.push({ name, args }); return { data: name === 'list_categories' ? [{ id: 'cat-1', name: 'วิชาแกน' }] : null, error: null } } })
+    await expect(service.listCategories()).resolves.toEqual([{ id: 'cat-1', name: 'วิชาแกน' }])
+    await service.createCategory(' วิชาเลือก ')
+    expect(calls).toEqual([{ name: 'list_categories', args: undefined }, { name: 'create_category', args: { p_name: 'วิชาเลือก' } }])
+  })
 })

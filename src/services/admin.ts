@@ -3,6 +3,7 @@ import type { RpcClient } from './reviews'
 export type VerifiedAccount = { id: string; name: string; email: string }
 export type RoleAssignment = VerifiedAccount & { role: 'owner' | 'administrator'; grantedAt: string }
 export type CourseDraft = { code: string; nameTh: string; categoryId: string }
+export type Category = { id: string; name: string }
 
 export class AdminService {
   constructor(private readonly client: RpcClient) {}
@@ -39,6 +40,17 @@ export class AdminService {
       p_name_th: course.nameTh.trim(),
       p_category_id: course.categoryId,
     })
+    if (error) throw new Error(error.message)
+  }
+
+  async listCategories(): Promise<Category[]> {
+    const { data, error } = await this.client.rpc('list_categories')
+    if (error) throw new Error(error.message)
+    return (data ?? []) as Category[]
+  }
+
+  async createCategory(name: string): Promise<void> {
+    const { error } = await this.client.rpc('create_category', { p_name: name.trim() })
     if (error) throw new Error(error.message)
   }
 
