@@ -11,3 +11,9 @@ Status: ready-for-agent
 - [ ] Release checks pass for Google sign-in, protected reads, anonymous review projection, ownership/role permissions, course and offering administration, proposals, review lifecycle/moderation, and private account-synced timetable behavior.
 - [ ] A production-like build and restore exercise pass, with data-permission tests treated as a release blocker.
 - [ ] The new Vercel deployment is activated only after the checks pass; the cutover record captures export counts, checks, deployment target, and the recovery decision path.
+
+## Comments
+
+### 2026-09-23 — Cutover evidence record added
+
+`docs/cutover-record.md` provides the owner-facing record for final export reconciliation, restore branch, two-account checks, deployed sign-in and idle-resume validation, deployment target, and rollback path. `release:gate` runs the automated test/build/config checks then deliberately remains nonzero until this owner-controlled evidence is filled in. No production cutover has been activated.
