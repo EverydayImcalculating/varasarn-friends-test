@@ -86,3 +86,7 @@ The test deployment URL `https://varasarn-friends-test-tau.vercel.app/` now retu
 ### 2026-09-23 — Release gate and deployment headers verified
 
 `npm run release:gate` passed with 22 tests and a production build. The public test deployment also returned HTTP/2 200 with the Vercel shell and strict transport security headers. The gate still correctly requests fresh export, restore, two-account permission, deployed Google sign-in, and idle-resume evidence before final cutover; those checks require the owner-controlled browser accounts.
+
+### 2026-09-23 — Data API credential rejection rechecked
+
+The deployed Neon Data API rejected an unauthenticated catalog RPC with HTTP 400 and `missing authentication credentials`, and rejected a malformed bearer token with HTTP 400 and `Provided authentication token is not a valid JWT encoding`. No credential or secret was exposed during the check. Authenticated cross-user behavior still requires the two-account browser acceptance.
