@@ -82,4 +82,15 @@ describe('AdminService', () => {
     await expect(service.bulkImportOfferings([])).rejects.toThrow('อย่างน้อยหนึ่ง')
     expect(calls[0]?.name).toBe('bulk_import_offerings')
   })
+
+  it('lists a course\'s approved offerings and corrects one through the administrator update RPC', async () => {
+    const calls: Array<{ name: string; args?: Record<string, unknown> }> = []
+    const service = new AdminService({ rpc: async (name, args) => { calls.push({ name, args }); return { data: name === 'list_approved_offerings' ? [{ id: 'offering-1', section: '1', academic_year: 2569, semester: '1', instructor_name: 'อาจารย์เอ' }] : null, error: null } } })
+    await expect(service.listOfferings('course-1')).resolves.toEqual([{ id: 'offering-1', section: '1', academic_year: 2569, semester: '1', instructor_name: 'อาจารย์เอ' }])
+    await service.updateOffering('offering-1', { courseId: 'course-1', academicYear: 2569, semester: ' 1 ', section: ' 2 ', instructorName: ' อาจารย์บี ', day: 3, startsAt: '10:00', endsAt: '12:00' })
+    expect(calls).toEqual([
+      { name: 'list_approved_offerings', args: { p_course_id: 'course-1' } },
+      { name: 'update_offering', args: { p_offering_id: 'offering-1', p_academic_year: 2569, p_semester: '1', p_section: '2', p_instructor_name: 'อาจารย์บี', p_day: 3, p_starts: '10:00', p_ends: '12:00' } },
+    ])
+  })
 })
