@@ -28,3 +28,7 @@ The earliest verified Google account on the linked production branch was assigne
 ### 2026-09-23 — Owner role-management controls added
 
 The dashboard now renders the owner-only membership list and verified-account list, with explicit appoint and revoke controls. Administrators do not receive this panel. Each action calls the existing owner-checked Data API RPC rather than trusting browser state. Service tests cover the role RPC selection; deployed two-account acceptance remains to be recorded.
+
+### 2026-09-23 — Owner panels were blocked by a moderation-list bug
+
+`openDashboard()` loads categories, courses, periods, proposals, and moderation reviews in sequence inside one `try`, and only then loads the owner's role assignments and verified accounts. `api.list_moderation_reviews` has thrown `column reference "id" is ambiguous` on every call since `0012`, so for the owner the role-management lists never loaded and the dashboard showed that error instead. The root cause is fixed in `0028_list_review_moderation_audit.sql` (see Ticket 11), which isn't yet applied to production. No change to this ticket's own RPCs was needed; `list_role_assignments` and `list_verified_accounts` both executed cleanly in the same branch probe.

@@ -75,6 +75,15 @@ describe('AdminService', () => {
     ])
   })
 
+  it('reads a review\'s moderation audit through the administrator RPC, naming the actor but never the author', async () => {
+    const calls: Array<{ name: string; args?: Record<string, unknown> }> = []
+    const service = new AdminService({ rpc: async (name, args) => { calls.push({ name, args }); return { data: [{ id: 'audit-1', prior_state: 'visible', new_state: 'hidden', reason: 'สแปม', actor_name: 'ผู้ดูแล ก', created_at: '2026-09-23' }], error: null } } })
+    const entries = await service.listModerationAudit('review-1')
+    expect(entries).toEqual([{ id: 'audit-1', priorState: 'visible', newState: 'hidden', reason: 'สแปม', actorName: 'ผู้ดูแล ก', createdAt: '2026-09-23' }])
+    expect(Object.keys(entries[0]!)).not.toContain('authorUserId')
+    expect(calls).toEqual([{ name: 'list_review_moderation_audit', args: { p_review_id: 'review-1' } }])
+  })
+
   it('submits structured offering rows only through the administrator batch RPC', async () => {
     const calls: Array<{ name: string; args?: Record<string, unknown> }> = []
     const service = new AdminService({ rpc: async (name, args) => { calls.push({ name, args }); return { data: [{ created_count: 1, updated_count: 0, existing_count: 0 }], error: null } } })
