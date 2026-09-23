@@ -13,7 +13,7 @@ const adminService = computed(() => neon ? new AdminService(neon as any) : null)
 const accessRole = ref<'owner' | 'administrator' | null>(null); const dashboard = ref(false)
 const members = ref<RoleAssignment[]>([]); const verifiedAccounts = ref<VerifiedAccount[]>([])
 const categories = ref<Category[]>([]); const categoryName = ref(''); const courseCode = ref(''); const courseName = ref(''); const courseCategoryId = ref('')
-const managedCourses = ref<ManagedCourse[]>([])
+const managedCourses = ref<ManagedCourse[]>([]); const editingCourseId = ref<string | null>(null)
 const searchTerm = ref(''); const categoryFilter = ref('')
 const filteredCourses = computed(() => courses.value.filter((course) => {
   const search = searchTerm.value.trim().toLowerCase()
@@ -57,7 +57,8 @@ async function openDashboard() {
   }
 }
 async function addCategory() { if (!adminService.value || !categoryName.value.trim()) return; try { await adminService.value.createCategory(categoryName.value); categoryName.value = ''; await openDashboard() } catch (cause) { error.value = cause instanceof Error ? cause.message : 'ไม่สามารถเพิ่มหมวดหมู่ได้' } }
-async function addCourse() { if (!adminService.value) return; try { await adminService.value.createCourse({ code: courseCode.value, nameTh: courseName.value, categoryId: courseCategoryId.value }); courseCode.value = ''; courseName.value = ''; await Promise.all([openDashboard(), loadCatalog()]) } catch (cause) { error.value = cause instanceof Error ? cause.message : 'ไม่สามารถเพิ่มรายวิชาได้' } }
+async function addCourse() { if (!adminService.value) return; try { const draft = { code: courseCode.value, nameTh: courseName.value, categoryId: courseCategoryId.value }; if (editingCourseId.value) await adminService.value.updateCourse(editingCourseId.value, draft); else await adminService.value.createCourse(draft); courseCode.value = ''; courseName.value = ''; editingCourseId.value = null; await Promise.all([openDashboard(), loadCatalog()]) } catch (cause) { error.value = cause instanceof Error ? cause.message : 'ไม่สามารถบันทึกรายวิชาได้' } }
+function editCourse(course: ManagedCourse) { editingCourseId.value = course.id; courseCode.value = course.code; courseName.value = course.name_th; courseCategoryId.value = course.category_id }
 async function archiveCourse(courseId: string) { if (!adminService.value) return; try { await adminService.value.archiveCourse(courseId); await Promise.all([openDashboard(), loadCatalog()]) } catch (cause) { error.value = cause instanceof Error ? cause.message : 'ไม่สามารถปิดใช้งานรายวิชาได้' } }
 async function grantAdministrator(userId: string) {
   if (!adminService.value) return
@@ -92,8 +93,8 @@ onMounted(async () => { if (!neon) { loading.value = false; return }; const sess
         <button class="btn btn-link text-purple p-0 mb-3" @click="dashboard = false">← กลับหน้ารายวิชา</button>
         <h1>แดชบอร์ดผู้ดูแล</h1><p v-if="error" class="text-danger" role="alert">{{ error }}</p>
         <h2 class="h4 mt-4">เพิ่มหมวดหมู่</h2><div class="input-group mb-3"><input v-model="categoryName" class="form-control" aria-label="ชื่อหมวดหมู่"><button class="btn btn-purple" @click="addCategory">เพิ่ม</button></div>
-        <h2 class="h4">เพิ่มรายวิชา</h2><div class="row g-2"><div class="col-md-3"><input v-model="courseCode" class="form-control" placeholder="รหัสวิชา"></div><div class="col-md-4"><input v-model="courseName" class="form-control" placeholder="ชื่อรายวิชา"></div><div class="col-md-3"><select v-model="courseCategoryId" class="form-select"><option v-for="category in categories" :key="category.id" :value="category.id">{{ category.name }}</option></select></div><div class="col-md-2"><button class="btn btn-purple w-100" @click="addCourse">เพิ่มรายวิชา</button></div></div>
-        <h2 class="h4 mt-4">รายวิชา</h2><ul class="list-group"><li v-for="course in managedCourses" :key="course.id" class="list-group-item d-flex justify-content-between align-items-center"><span><strong>{{ course.code }}</strong> · {{ course.name_th }} <small class="text-muted">{{ course.category_name }} · {{ course.status }}</small></span><button v-if="course.status === 'approved'" class="btn btn-sm btn-outline-danger" @click="archiveCourse(course.id)">เก็บเข้าคลัง</button></li></ul>
+        <h2 class="h4">{{ editingCourseId ? 'แก้ไขรายวิชา' : 'เพิ่มรายวิชา' }}</h2><div class="row g-2"><div class="col-md-3"><input v-model="courseCode" class="form-control" placeholder="รหัสวิชา"></div><div class="col-md-4"><input v-model="courseName" class="form-control" placeholder="ชื่อรายวิชา"></div><div class="col-md-3"><select v-model="courseCategoryId" class="form-select"><option v-for="category in categories" :key="category.id" :value="category.id">{{ category.name }}</option></select></div><div class="col-md-2"><button class="btn btn-purple w-100" @click="addCourse">{{ editingCourseId ? 'บันทึก' : 'เพิ่มรายวิชา' }}</button></div></div>
+        <h2 class="h4 mt-4">รายวิชา</h2><ul class="list-group"><li v-for="course in managedCourses" :key="course.id" class="list-group-item d-flex justify-content-between align-items-center"><span><strong>{{ course.code }}</strong> · {{ course.name_th }} <small class="text-muted">{{ course.category_name }} · {{ course.status }}</small></span><span class="d-flex gap-2"><button class="btn btn-sm btn-outline-purple" @click="editCourse(course)">แก้ไข</button><button v-if="course.status === 'approved'" class="btn btn-sm btn-outline-danger" @click="archiveCourse(course.id)">เก็บเข้าคลัง</button></span></li></ul>
       </section>
       <template v-else>
         <div class="about mb-4"><h2>เกี่ยวกับ Varasarn Close Friends</h2><p>พื้นที่รวบรวมความคิดเห็นจากนักศึกษาคณะวารสารศาสตร์และสื่อสารมวลชน</p></div>
