@@ -4,7 +4,7 @@
 
 Blocked by: 01 Authenticated catalog and anonymous review tracer
 
-Status: ready-for-agent
+Status: needs-info
 
 - [ ] Deployment instructions identify the required Google, Neon, and Vercel configuration, safe secret handling, environment separation, and a production-like build check.
 - [ ] An automated export or equivalent recovery mechanism retains usable database backups without routine manual action and documents retention and access control.

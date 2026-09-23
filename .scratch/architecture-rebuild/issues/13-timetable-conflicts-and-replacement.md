@@ -4,7 +4,7 @@
 
 Blocked by: 12 Private account-synced timetable
 
-Status: ready-for-agent
+Status: needs-info
 
 - [x] The timetable warns when meeting intervals overlap on the same day and explains which selected offerings conflict; end times are exclusive, so touching end/start times are not conflicts.
 - [x] The same overlap result is used during preview and save; the user can deliberately confirm a warned selection, but invalid or missing intervals cannot bypass the selection rule.

@@ -4,7 +4,7 @@
 
 Blocked by: 05 Merge duplicate courses; 06 Approved offerings and academic periods
 
-Status: ready-for-agent
+Status: needs-info
 
 - [x] A user can add an approved offering, view the selected sections with their meeting times, remove one selection, and clear the timetable.
 - [x] The timetable keeps the old colored-grid visual language on desktop and has a readable mobile presentation; removing a selection uses an explicit control, not an accidental click on the whole class block.

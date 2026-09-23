@@ -4,7 +4,7 @@
 
 Blocked by: 02 Owner and administrator access
 
-Status: ready-for-agent
+Status: needs-info
 
 - [ ] The administrator dashboard can search reviews and inspect visible, hidden, removed, and author-withdrawn states without routinely displaying author ID or email.
 - [ ] Administrators can hide, restore, or remove a review with a required reason; each transition records actor, reason, time, and prior/new state in an append-only audit record.

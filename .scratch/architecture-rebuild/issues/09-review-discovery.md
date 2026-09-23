@@ -4,7 +4,7 @@
 
 Blocked by: 06 Approved offerings and academic periods
 
-Status: ready-for-agent
+Status: needs-info
 
 - [ ] Course and offering screens show visible reviews with rating, text, date, semester, academic year, section, and maintained offering context.
 - [ ] Readers can filter by overall rating, semester, and academic year without exposing author identity or private revision data in any data response.

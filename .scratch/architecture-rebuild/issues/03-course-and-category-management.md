@@ -20,3 +20,7 @@ Status: needs-info
 Added normalized categories, catalog audit records, administrator-only create/update/archive course RPCs, and an authenticated category-list RPC. The existing public catalog RPC now joins categories and continues to return approved courses only. Migration `0004_course_and_category_management.sql` is applied to Neon and the Data API schema cache is refreshed.
 
 The client-side administrator catalog UI and browser acceptance remain pending alongside the deferred OAuth/Vercel configuration.
+
+### 2026-09-23 — Dashboard catalog controls implemented; external acceptance remains
+
+The deployed dashboard now includes category creation and rename, normalized course creation/editing, and archiving. The student catalog retains the original card layout and supports code/name search plus category filtering. Service tests cover normalized writes and protected RPC choices. A signed-in administrator browser pass and direct ordinary-user denial proof remain required evidence.

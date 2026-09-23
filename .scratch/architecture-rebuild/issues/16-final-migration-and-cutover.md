@@ -4,7 +4,7 @@
 
 Blocked by: 04 Course import and reconciliation; 05 Merge duplicate courses; 07 Student offering proposals and approval; 08 Bulk offering import; 09 Review discovery and filtering; 10 Author review lifecycle; 11 Review moderation and audit; 13 Timetable conflict warnings and section replacement; 14 Legacy review migration; 15 Repeatable deployment and recovery
 
-Status: ready-for-agent
+Status: needs-info
 
 - [ ] A fresh final export is taken from the live spreadsheet; its course and review counts and relationships reconcile with the new database before traffic changes.
 - [ ] The old data is retained in a recoverable export, and unverified legacy schedules remain unavailable for new timetable selections.

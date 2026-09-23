@@ -4,7 +4,7 @@
 
 Blocked by: 05 Merge duplicate courses; 06 Approved offerings and academic periods
 
-Status: ready-for-agent
+Status: needs-info
 
 - [ ] A signed-in user can submit an offering proposal for an existing active course and see their own pending, approved, or rejected proposals.
 - [ ] Proposing a missing offering is a separate, clearly labeled flow from writing a review, with visible validation and status feedback.

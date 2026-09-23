@@ -4,7 +4,7 @@
 
 Blocked by: 03 Course and category management
 
-Status: ready-for-agent
+Status: needs-info
 
 - [x] Administrators can maintain academic years and semester labels through the dashboard, preserving user-facing Thai terminology.
 - [x] Administrators can add an offering for an active course with year, semester, section, instructor, and a valid meeting interval.

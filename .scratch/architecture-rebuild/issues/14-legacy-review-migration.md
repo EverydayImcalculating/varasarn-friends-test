@@ -4,7 +4,7 @@
 
 Blocked by: 04 Course import and reconciliation; 06 Approved offerings and academic periods
 
-Status: ready-for-agent
+Status: needs-info
 
 - [ ] A repeatable dry run and confirmed import normalize legacy rating, date, course, section, semester, and year values and report source counts, duplicates, and unmatched relationships.
 - [ ] Imported reviews retain text, rating, date, and historical course/section context, but no account owns them and stored unverified email values are discarded rather than matched to Google users.
