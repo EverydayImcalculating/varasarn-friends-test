@@ -70,3 +70,7 @@ The selected-course view now uses the original centered modal composition: purpl
 ### 2026-09-23 — Review controls simplified for visual match
 
 Removed the manual “ใช้ตัวกรอง” button; rating, semester, and academic-year filters now reload reviews when changed. The “ไม่พบกลุ่มเรียนที่ต้องการ?” proposal panel is hidden temporarily while the review flow is matched to the original interface; its service and backend remain available for a later pass. `npm test -- --run` passed 22 tests and `npm run build` passed.
+
+### 2026-09-23 — Review filter and composer fields matched
+
+The review filters now use the original term choices (`ทุกเทอม`, `เทอม 1`, `เทอม 2`, `ฤดูร้อน`) and academic-year choices (`ทุกปี`, 2569 through 2565), refreshing immediately on selection. The composer now provides editable teacher and section fields plus selectable weekday and start/end time controls. These factual fields remain UI-only until an approved offering-management path persists them; review rating and text continue using the existing review API. `npm test -- --run` passed 22 tests and `npm run build` passed.
