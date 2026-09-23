@@ -36,4 +36,17 @@ describe('ReviewService', () => {
 
     await expect(service.create('offering-1', 6, 'เนื้อหาดี')).rejects.toThrow('เลือกระดับคะแนน 1 ถึง 5')
   })
+
+  it('uses self-scoped lifecycle RPCs for a review author', async () => {
+    const calls: Array<{ name: string; args?: Record<string, unknown> }> = []
+    const service = new ReviewService({ rpc: async (name, args) => { calls.push({ name, args }); return { data: name === 'list_my_reviews' ? [{ id: 'review-1', offering_id: 'offering-1', rating: 4, text: 'เดิม', author_active: true, created_at: '2026-01-01' }] : null, error: null } } })
+    await expect(service.listMine()).resolves.toMatchObject([{ offeringId: 'offering-1', active: true }])
+    await service.updateMine('review-1', 5, 'ปรับปรุง')
+    await service.setMineActive('review-1', false)
+    expect(calls).toEqual([
+      { name: 'list_my_reviews', args: undefined },
+      { name: 'update_my_review', args: { p_review_id: 'review-1', p_rating: 5, p_text: 'ปรับปรุง' } },
+      { name: 'set_my_review_active', args: { p_review_id: 'review-1', p_active: false } },
+    ])
+  })
 })
