@@ -4,7 +4,7 @@
 
 Blocked by: 01 Authenticated catalog and anonymous review tracer
 
-Status: needs-info
+Status: ready-for-agent
 
 - [ ] The initial owner is established through a controlled, documented bootstrap tied to a verified account; possession of an email string or browser-side setting does not grant a role.
 - [ ] The owner can find a verified account, grant or revoke its administrator role, and see the resulting membership in the dashboard.
@@ -20,3 +20,7 @@ Status: needs-info
 Added the private role membership and append-only role audit tables, a verified-Google membership trigger, and owner-checked Data API RPCs for current access, listing verified accounts, listing assigned roles, granting administrator access, and revoking it. The migration is applied to the linked Neon production branch and its Data API schema cache was refreshed.
 
 The Vue dashboard is visible only after the database reports an owner or administrator role. Administrators see no role-management controls; owner changes go through database-enforced RPCs. The initial owner remains unconfigured because it requires a completed verified Google sign-in; use `db/bootstrap-owner.sql` with database-owner access after OAuth is enabled. Browser and cross-account acceptance therefore remain deferred with Ticket 01's OAuth/Vercel work.
+
+### 2026-09-23 — Initial owner bootstrapped
+
+The earliest verified Google account on the linked production branch was assigned the sole `owner` role through the database-owner bootstrap transaction. The membership and `bootstrap_owner` audit entry were verified. The ticket no longer needs external identity information; remaining work is deployed owner/dashboard and cross-account acceptance.
