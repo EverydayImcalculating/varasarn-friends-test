@@ -17,3 +17,7 @@ Status: needs-info
 ### 2026-09-23 — Cutover evidence record added
 
 `docs/cutover-record.md` provides the owner-facing record for final export reconciliation, restore branch, two-account checks, deployed sign-in and idle-resume validation, deployment target, and rollback path. `release:gate` runs the automated test/build/config checks then deliberately remains nonzero until this owner-controlled evidence is filled in. No production cutover has been activated.
+
+### 2026-09-23 — Recovery evidence entered in cutover record
+
+The cutover record now includes snapshot `snap-wispy-river-b3otmaob` and the successfully verified isolated restore branch `br-damp-king-b33kw7dp`. Fresh final export reconciliation, account acceptance checks, deployment activation, and rollback decision remain intentionally incomplete.
