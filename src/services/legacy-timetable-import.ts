@@ -23,7 +23,7 @@ export type LegacySource =
   | { kind: 'found'; entries: LegacyClass[] }
 
 export type TimetableEntry = {
-  offering_id: string
+  offering_id: string | null
   course_code: string
   section: string
   day_of_week: number

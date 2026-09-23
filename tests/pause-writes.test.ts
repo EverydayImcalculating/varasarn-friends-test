@@ -7,15 +7,15 @@ import { isWriteFunction } from '../scripts/api-write-classification.mjs'
 const READ_FUNCTIONS = [
   'list_academic_periods', 'list_approved_catalog', 'list_approved_offerings', 'current_access',
   'list_verified_accounts', 'list_role_assignments', 'list_categories', 'list_manageable_courses',
-  'list_my_offering_proposals', 'list_my_timetable', 'list_pending_offering_proposals',
+  'list_my_offering_proposals', 'list_my_timetable', 'list_my_reported_timetable', 'list_pending_offering_proposals',
   'list_approved_offering_meetings', 'preview_offering_import', 'list_my_reviews', 'preview_course_merge',
   'list_my_review_revisions', 'list_visible_reviews', 'list_moderation_reviews', 'list_review_moderation_audit',
 ]
 const WRITE_FUNCTIONS = [
-  'add_my_timetable_offering', 'archive_course', 'bulk_import_offerings', 'clear_my_timetable',
+  'add_my_timetable_offering', 'add_my_timetable_review', 'archive_course', 'bulk_import_offerings', 'clear_my_timetable',
   'create_academic_period', 'create_category', 'create_course', 'create_offering', 'create_offering_proposal',
   'create_review', 'grant_administrator', 'import_legacy_reviews', 'merge_course', 'moderate_review',
-  'remove_my_timetable_offering', 'replace_my_timetable_offering', 'resolve_offering_proposal',
+  'remove_my_timetable_offering', 'remove_my_timetable_review', 'replace_my_timetable_offering', 'resolve_offering_proposal',
   'revoke_administrator', 'set_my_review_active', 'update_category', 'update_course', 'update_my_review',
   'update_offering',
 ]
@@ -29,8 +29,8 @@ describe('api write classification', () => {
     for (const name of WRITE_FUNCTIONS) expect(isWriteFunction(name)).toBe(true)
   })
 
-  it('classifies exactly the 42 known functions with no overlap or gap', () => {
-    expect(READ_FUNCTIONS.length + WRITE_FUNCTIONS.length).toBe(42)
-    expect(new Set([...READ_FUNCTIONS, ...WRITE_FUNCTIONS]).size).toBe(42)
+  it('classifies exactly the 45 known functions with no overlap or gap', () => {
+    expect(READ_FUNCTIONS.length + WRITE_FUNCTIONS.length).toBe(45)
+    expect(new Set([...READ_FUNCTIONS, ...WRITE_FUNCTIONS]).size).toBe(45)
   })
 })

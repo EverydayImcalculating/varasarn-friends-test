@@ -15,7 +15,7 @@ vi.mock('../src/neon', () => ({
       if (name === 'list_approved_catalog') return { data: [{ id: 'course-1', code: 'JC100', name_th: 'วารสารศาสตร์', category_name: 'วิชาแกน' }], error: null }
       if (name === 'list_approved_offerings') return { data: [{ id: 'offering-1', section: '1', academic_year: 2569, semester: '1', instructor_name: 'อาจารย์ใหม่' }], error: null }
       if (name === 'list_approved_offering_meetings') return { data: [{ day_of_week: 1, starts_at: '09:00:00', ends_at: '11:00:00' }], error: null }
-      if (name === 'list_my_timetable' || name === 'list_categories') return { data: [], error: null }
+      if (name === 'list_my_timetable' || name === 'list_my_reported_timetable' || name === 'list_categories') return { data: [], error: null }
       if (name === 'current_access') return { data: [{ role: null }], error: null }
       if (name === 'add_my_timetable_offering') return { data: null, error: null }
       throw new Error(`Unexpected RPC: ${name}`)

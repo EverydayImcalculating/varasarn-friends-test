@@ -7,7 +7,7 @@ Blocked by: 04 Course import and reconciliation; 05 Merge duplicate courses; 07 
 Status: needs-info
 
 - [ ] A fresh final export is taken from the live spreadsheet; its course and review counts and relationships reconcile with the new database before traffic changes.
-- [ ] The old data is retained in a recoverable export, and unverified legacy schedules remain unavailable for new timetable selections.
+- [ ] The old data is retained in a recoverable export, and unverified legacy schedules never become shared official offerings. A user can choose valid review-reported details only for their private labeled timetable.
 - [ ] Release checks pass for Google sign-in, protected reads, anonymous review projection, ownership/role permissions, course and offering administration, proposals, review lifecycle/moderation, and private account-synced timetable behavior.
 - [ ] A production-like build and restore exercise pass, with data-permission tests treated as a release blocker.
 - [ ] The new Vercel deployment is activated only after the checks pass; the cutover record captures export counts, checks, deployment target, and the recovery decision path.
@@ -21,3 +21,7 @@ Status: needs-info
 ### 2026-09-23 — Recovery evidence entered in cutover record
 
 The cutover record now includes snapshot `snap-wispy-river-b3otmaob` and the successfully verified isolated restore branch `br-damp-king-b33kw7dp`. Fresh final export reconciliation, account acceptance checks, deployment activation, and rollback decision remain intentionally incomplete.
+
+### 2026-09-23 — Private review-reported timetable clarification
+
+The owner requested the original add-from-review flow without requiring an approved offering. The release criterion now permits a valid review-reported time in an account's private, labeled timetable, while the shared official offerings catalog still requires administrator approval. This does not complete the final cutover gate.

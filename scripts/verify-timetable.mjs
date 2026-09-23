@@ -7,7 +7,7 @@ if (!connectionString || !expectedHost || new URL(connectionString).hostname !==
   throw new Error('Supply a direct connection and the exact isolated test branch host')
 }
 
-const timetableFunctions = ['list_my_timetable', 'add_my_timetable_offering', 'remove_my_timetable_offering', 'clear_my_timetable', 'replace_my_timetable_offering', 'list_approved_offering_meetings']
+const timetableFunctions = ['list_my_timetable', 'list_my_reported_timetable', 'add_my_timetable_offering', 'add_my_timetable_review', 'remove_my_timetable_offering', 'remove_my_timetable_review', 'clear_my_timetable', 'replace_my_timetable_offering', 'list_approved_offering_meetings']
 const client = new pg.Client({ connectionString })
 await client.connect()
 try {
@@ -81,7 +81,7 @@ try {
 
   // --- add_my_timetable_offering is denied without an authenticated identity (NOT NULL user_id). ---
   await client.query('SAVEPOINT no_identity')
-  await assert.rejects(client.query('SELECT api.add_my_timetable_offering($1::uuid)', [approvedOffering]), /null value in column "user_id"/)
+  await assert.rejects(client.query('SELECT api.add_my_timetable_offering($1::uuid)', [approvedOffering]), /authentication required/)
   await client.query('ROLLBACK TO SAVEPOINT no_identity')
   console.log('PASS: adding a selection is denied without an authenticated identity')
 
@@ -99,7 +99,7 @@ try {
   // --- A valid offering clears replace's validation and reaches the identity-scoped write, which is then
   // denied the same way add is without a real signed-in identity. ---
   await client.query('SAVEPOINT replace_no_identity')
-  await assert.rejects(client.query('SELECT api.replace_my_timetable_offering($1::uuid)', [approvedOffering]), /null value in column "user_id"/)
+  await assert.rejects(client.query('SELECT api.replace_my_timetable_offering($1::uuid)', [approvedOffering]), /authentication required/)
   await client.query('ROLLBACK TO SAVEPOINT replace_no_identity')
   console.log('PASS: a valid offering passes replace validation and is denied only for lacking an authenticated identity')
 

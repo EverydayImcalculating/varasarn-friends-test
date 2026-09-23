@@ -7,6 +7,7 @@ const fixture = vi.hoisted(() => ({
   reviews: [{ id: 'review-1', rating: 5, text: 'สนุกมาก', created_at: '2026-09-23T10:00:00Z', section: '320001', semester: '1', academic_year: 2568, instructor_name: 'อ. อ้อม', day_of_week: 4, starts_at: '09:30:00', ends_at: '12:30:00' }],
   meetings: [{ day_of_week: 4, starts_at: '09:30:00', ends_at: '12:30:00' }],
   timetable: [] as Array<{ offering_id: string; course_code: string; course_name: string; section: string; day_of_week: number; starts_at: string; ends_at: string }>,
+  reported: [] as Array<{ review_id: string; course_code: string; course_name: string; section: string; day_of_week: number; starts_at: string; ends_at: string }>,
   writeError: null as string | null,
   calls: [] as Array<{ name: string; args?: Record<string, unknown> }>,
 }))
@@ -21,6 +22,17 @@ vi.mock('../src/neon', () => ({
       if (name === 'list_visible_reviews') return { data: fixture.reviews, error: null }
       if (name === 'list_approved_offering_meetings') return { data: fixture.meetings, error: null }
       if (name === 'list_my_timetable') return { data: fixture.timetable, error: null }
+      if (name === 'list_my_reported_timetable') return { data: fixture.reported, error: null }
+      if (name === 'add_my_timetable_review') {
+        if (fixture.writeError) return { data: null, error: { message: fixture.writeError } }
+        fixture.timetable = fixture.timetable.filter((entry) => entry.course_code !== 'JC232')
+        fixture.reported = [{ review_id: String(args?.p_review_id), course_code: 'JC232', course_name: 'เทคนิคการถ่ายทำ', section: '320001', day_of_week: 4, starts_at: '09:30:00', ends_at: '12:30:00' }]
+        return { data: null, error: null }
+      }
+      if (name === 'remove_my_timetable_review') {
+        fixture.reported = fixture.reported.filter((entry) => entry.review_id !== args?.p_review_id)
+        return { data: null, error: null }
+      }
       if (name === 'add_my_timetable_offering' || name === 'replace_my_timetable_offering') {
         if (fixture.writeError) return { data: null, error: { message: fixture.writeError } }
         fixture.timetable = [...fixture.timetable.filter((entry) => name !== 'replace_my_timetable_offering' || entry.course_code !== 'JC232'), { offering_id: String(args?.p_offering_id), course_code: 'JC232', course_name: 'เทคนิคการถ่ายทำ', section: '320001', day_of_week: 4, starts_at: '09:30:00', ends_at: '12:30:00' }]
@@ -50,6 +62,7 @@ describe('review to personal timetable', () => {
     fixture.reviews = [{ id: 'review-1', rating: 5, text: 'สนุกมาก', created_at: '2026-09-23T10:00:00Z', section: '320001', semester: '1', academic_year: 2568, instructor_name: 'อ. อ้อม', day_of_week: 4, starts_at: '09:30:00', ends_at: '12:30:00' }]
     fixture.meetings = [{ day_of_week: 4, starts_at: '09:30:00', ends_at: '12:30:00' }]
     fixture.timetable = []
+    fixture.reported = []
     fixture.writeError = null
     fixture.calls.length = 0
     vi.stubGlobal('confirm', vi.fn(() => true))
@@ -68,16 +81,44 @@ describe('review to personal timetable', () => {
     wrapper.unmount()
   })
 
-  it('keeps a historical review readable when there is no approved matching class', async () => {
+  it('adds a review-backed personal selection when there is no approved matching class', async () => {
     fixture.offerings = []
     fixture.reviews[0].created_at = 'invalid'
     const wrapper = await openReview()
     const review = wrapper.get('.review-card')
     expect(review.text()).toContain('สนุกมาก')
-    expect(review.text()).toContain('ยังไม่มีกลุ่มเรียนที่อนุมัติ')
     expect(review.text()).not.toContain('Invalid Date')
-    expect(review.find('button').exists()).toBe(false)
-    expect(fixture.calls.some(({ name }) => name === 'add_my_timetable_offering')).toBe(false)
+    expect(review.get('button').text()).toContain('เพิ่มลงตาราง')
+    await review.get('button').trigger('click')
+    await flushPromises()
+    expect(fixture.calls).toContainEqual({ name: 'add_my_timetable_review', args: { p_review_id: 'review-1' } })
+    expect(wrapper.get('.timetable-course').text()).toContain('JC232 (320001)')
+    wrapper.unmount()
+  })
+
+  it('can remove a private review schedule from the timetable', async () => {
+    fixture.offerings = []
+    fixture.reported = [{ review_id: 'review-1', course_code: 'JC232', course_name: 'เทคนิคการถ่ายทำ', section: '320001', day_of_week: 4, starts_at: '09:30:00', ends_at: '12:30:00' }]
+    const wrapper = await openReview()
+    expect(wrapper.get('.review-card').text()).toContain('อยู่ในตารางแล้ว')
+    await wrapper.get('nav .btn-light').trigger('click')
+    await flushPromises()
+    expect(wrapper.get('.timetable-course').text()).toContain('ข้อมูลจากรีวิว')
+    await wrapper.get('.review-box button.btn-outline-danger').trigger('click')
+    await flushPromises()
+    expect(fixture.calls).toContainEqual({ name: 'remove_my_timetable_review', args: { p_review_id: 'review-1' } })
+    expect(wrapper.find('.timetable-course').exists()).toBe(false)
+    wrapper.unmount()
+  })
+
+  it('shows a private selection save failure without claiming success', async () => {
+    fixture.offerings = []
+    fixture.writeError = 'save failed'
+    const wrapper = await openReview()
+    await wrapper.get('.review-card button').trigger('click')
+    await flushPromises()
+    expect(wrapper.get('.course-review-body [role="alert"]').text()).toContain('save failed')
+    expect(fixture.reported).toHaveLength(0)
     wrapper.unmount()
   })
 
@@ -90,18 +131,19 @@ describe('review to personal timetable', () => {
     wrapper.unmount()
   })
 
-  it('does not offer a timetable action when the approved class has no meeting', async () => {
+  it('offers a private review schedule when the approved class has no meeting', async () => {
     fixture.meetings = []
     const wrapper = await openReview()
-    expect(wrapper.get('.review-card').text()).toContain('ยังไม่มีกลุ่มเรียนที่อนุมัติพร้อมเวลาเรียน')
-    expect(wrapper.find('.review-card button').exists()).toBe(false)
+    expect(wrapper.get('.review-card').text()).toContain('ข้อมูลเวลาเรียนจากรีวิว')
+    expect(wrapper.find('.review-card button').exists()).toBe(true)
     wrapper.unmount()
   })
 
-  it('does not guess when multiple approved classes match a review', async () => {
+  it('offers only a private review schedule when multiple approved classes match a review', async () => {
     fixture.offerings.push({ id: 'offering-2', section: '320001', academic_year: 2568, semester: '1', instructor_name: 'อ. อ้อม' })
     const wrapper = await openReview()
-    expect(wrapper.find('.review-card button').exists()).toBe(false)
+    expect(wrapper.get('.review-card').text()).toContain('ข้อมูลเวลาเรียนจากรีวิว')
+    expect(wrapper.find('.review-card button').exists()).toBe(true)
     wrapper.unmount()
   })
 
@@ -123,13 +165,13 @@ describe('review to personal timetable', () => {
     wrapper.unmount()
   })
 
-  it('does not add a review-linked class if its approved period changes before selection', async () => {
+  it('uses the private reported schedule if the approved period changes before selection', async () => {
     const wrapper = await openReview()
     fixture.offerings[0].semester = '2'
     await wrapper.get('.review-card button').trigger('click')
     await flushPromises()
     expect(fixture.calls.some(({ name }) => name === 'add_my_timetable_offering')).toBe(false)
-    expect(wrapper.get('.course-review-body [role="alert"]').text()).toContain('รีวิวนี้')
+    expect(fixture.calls.some(({ name }) => name === 'add_my_timetable_review')).toBe(true)
     wrapper.unmount()
   })
 

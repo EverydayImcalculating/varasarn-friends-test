@@ -20,6 +20,7 @@ function timetableClient(fixture: TimetableFixture = {}) {
   const rpc = vi.fn(async (name: string, args?: Record<string, unknown>) => {
     calls.push(name)
     if (name === 'list_my_timetable') return { data: selections, error: null }
+    if (name === 'list_my_reported_timetable') return { data: [], error: null }
     if (name === 'list_approved_offerings') return { data: args?.p_course_id === 'course-1' ? fixture.offerings ?? [{ id: 'offering-1', section: '1', academic_year: 2569, semester: '1', instructor_name: 'อาจารย์ใหม่' }] : [], error: null }
     if (name === 'list_approved_offering_meetings') return { data: (fixture.offerings ?? [{ id: 'offering-1' }]).some((offering) => offering.id === args?.p_offering_id) ? fixture.meetings ?? [{ day_of_week: 1, starts_at: '09:00:00', ends_at: '11:00:00' }] : [], error: null }
     if (name === 'add_my_timetable_offering') {
@@ -143,6 +144,7 @@ describe('legacy timetable import in the signed-in timetable', () => {
     let firstAddFailed = false
     const client = { rpc: vi.fn(async (name: string, args?: Record<string, unknown>) => {
       if (name === 'list_my_timetable') return { data: selections, error: null }
+    if (name === 'list_my_reported_timetable') return { data: [], error: null }
       if (name === 'list_approved_offerings') return { data: [{ id: args?.p_course_id === 'course-1' ? 'offering-1' : 'offering-2', section: '1', academic_year: 2569, semester: '1', instructor_name: null }], error: null }
       if (name === 'list_approved_offering_meetings') return { data: args?.p_offering_id === 'offering-1' ? [{ day_of_week: 1, starts_at: '09:00:00', ends_at: '11:00:00' }] : [{ day_of_week: 2, starts_at: '13:00:00', ends_at: '15:00:00' }], error: null }
       if (name === 'add_my_timetable_offering') {
