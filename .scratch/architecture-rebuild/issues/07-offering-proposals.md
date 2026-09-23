@@ -21,3 +21,7 @@ Status: needs-info
 The student client validates and normalizes proposal fields before using only `create_offering_proposal` and `list_my_offering_proposals`. The Vue component now uses that typed service rather than direct RPC calls. Administrators have a separate pending-proposal projection and resolution client, backed by the deployed atomic resolution function. Service tests cover the student request shape and self-scoped read.
 
 The remaining work is to render the student status and administrator approval controls in the protected browser flows, then record cross-account acceptance evidence.
+
+### 2026-09-23 — Proposal flows rendered
+
+The course detail now has a separately labeled proposal form and a self-only status list for the selected course. The administrator dashboard renders pending proposal rows with approval and rejection controls. Both use the existing typed, protected Data API clients; no author identity is displayed. `npm test -- --run` passed (22 tests) and `npm run build` passed. Live cross-account acceptance remains needed.
