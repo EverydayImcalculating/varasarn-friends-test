@@ -22,3 +22,7 @@ Course detail now exposes rating, semester, and academic-year filters through th
 ### 2026-09-23 — Review source changed by owner
 
 The owner removed approval as a prerequisite for reviews. Review detail and filters must move from official offering references to student-reported course, academic year, term, and section context. Earlier implementation comments describe the old design and remain as history.
+
+### 2026-09-23 — Course-scoped anonymous reviews implemented
+
+The anonymous review RPC now reads by approved course and returns only rating, text, date, and student-reported class context. Rating, term, and academic-year filters run against that context. The review composer no longer needs an official offering and cards label the teacher and schedule as student-reported. Migration `0024_student_reported_reviews.sql` was applied to production and the Data API schema cache refreshed; an isolated Neon branch confirmed projected context and normalized duplicate rejection. `npm test` passed (23 tests), `npm run build` passed, and `git diff --check` passed. Narrow-screen and two-account browser acceptance remain open.

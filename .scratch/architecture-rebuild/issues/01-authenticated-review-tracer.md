@@ -106,3 +106,7 @@ The composer no longer disables the save button merely because the offering list
 ### 2026-09-23 — Review approval requirement changed by owner
 
 The owner confirmed that students should be able to submit a review with their own class details without waiting for an administrator to approve or create an offering. The ticket criteria above supersede earlier comments about requiring an approved offering. Official offerings remain the source for shared timetable selections; review context is self-reported. The current `create_review` RPC and Vue guard still enforce the old rule and must be changed before this ticket can close.
+
+### 2026-09-23 — Student-reported review submission implemented
+
+Migration `0024_student_reported_reviews.sql` makes review context course-scoped and self-reported, preserves existing review history through a backfill, and makes `offering_id` optional. The new `api.create_review` validates the approved course plus term, year, section, teacher, day, and time without querying an official offering. It enforces one normalized class-context review per authenticated user. Production migration application and the Neon Data API schema-cache refresh completed; an isolated Neon branch verified the new anonymous projection and duplicate constraint. The Vue composer sends the new context and labels displayed details as student-reported. `npm test` passed (23 tests), `npm run build` passed, and `git diff --check` passed. Live two-account browser acceptance remains required.

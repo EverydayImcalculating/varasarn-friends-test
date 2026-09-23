@@ -1,5 +1,5 @@
 import { sql } from 'drizzle-orm'
-import { boolean, check, integer, pgSchema, text, timestamp, unique, uuid } from 'drizzle-orm/pg-core'
+import { boolean, check, integer, pgSchema, text, time, timestamp, unique, uniqueIndex, uuid } from 'drizzle-orm/pg-core'
 
 export const appPrivate = pgSchema('app_private')
 
@@ -35,17 +35,31 @@ export const offerings = appPrivate.table('offerings', {
 
 export const reviews = appPrivate.table('reviews', {
   id: uuid('id').defaultRandom().primaryKey(),
-  authorUserId: text('author_user_id').notNull(),
-  offeringId: uuid('offering_id').notNull().references(() => offerings.id),
+  authorUserId: text('author_user_id'),
+  courseId: uuid('course_id').notNull().references(() => courses.id),
+  offeringId: uuid('offering_id').references(() => offerings.id),
+  academicYear: integer('academic_year').notNull(),
+  semester: text('semester').notNull(),
+  section: text('section').notNull(),
+  instructorName: text('instructor_name'),
+  dayOfWeek: integer('day_of_week'),
+  startsAt: time('starts_at'),
+  endsAt: time('ends_at'),
   rating: integer('rating').notNull(),
   text: text('text').notNull(),
   authorActive: boolean('author_active').notNull().default(true),
   moderationVisible: boolean('moderation_visible').notNull().default(true),
+  isLegacy: boolean('is_legacy').notNull().default(false),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
 }, (table) => [
   check('reviews_rating_check', sql`${table.rating} between 1 and 5`),
   check('reviews_text_check', sql`length(btrim(${table.text})) > 0`),
+  check('reviews_reported_year_check', sql`${table.academicYear} between 2400 and 2700`),
+  check('reviews_reported_semester_check', sql`${table.semester} in ('1', '2', 'ฤดูร้อน')`),
+  check('reviews_reported_section_check', sql`length(btrim(${table.section})) > 0`),
+  check('reviews_reported_time_check', sql`(${table.dayOfWeek} is null and ${table.startsAt} is null and ${table.endsAt} is null) or (${table.dayOfWeek} between 1 and 7 and ${table.startsAt} is not null and ${table.endsAt} > ${table.startsAt})`),
   unique('reviews_author_offering_unique').on(table.authorUserId, table.offeringId),
+  uniqueIndex('reviews_author_course_class_unique').on(table.authorUserId, table.courseId, table.academicYear, table.semester, sql`lower(regexp_replace(btrim(${table.section}), '[[:space:]]+', '', 'g'))`).where(sql`${table.authorUserId} is not null`),
 ])
 
 export const roleMemberships = appPrivate.table('role_memberships', {
