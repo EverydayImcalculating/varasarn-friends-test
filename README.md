@@ -61,4 +61,7 @@ The database owner then runs [db/bootstrap-owner.sql](db/bootstrap-owner.sql), r
 ```bash
 npm test
 npm run build
+npm run preview
 ```
+
+`npm run build` type-checks and bundles; it does not prove the bundle boots. `npm run preview` serves the built `dist/` output exactly as a static host would (no dev-server transforms), so it is the production-like build check: confirm it loads the sign-in screen with no console errors before every release.

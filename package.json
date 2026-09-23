@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "vite",
     "build": "vue-tsc -b && vite build",
+    "preview": "vite preview",
     "test": "vitest run",
     "test:watch": "vitest",
     "db:generate": "drizzle-kit generate",
@@ -20,7 +21,11 @@
     "test:review-moderation": "node scripts/verify-review-moderation.mjs",
     "test:timetable": "node scripts/verify-timetable.mjs",
     "test:legacy-reviews": "node scripts/verify-legacy-review-import.mjs",
+    "test:pause-writes": "node scripts/verify-pause-writes.mjs",
     "recovery:snapshot": "bash scripts/create-recovery-snapshot.sh",
+    "recovery:freeze": "node scripts/pause-writes.mjs freeze",
+    "recovery:unfreeze": "node scripts/pause-writes.mjs unfreeze",
+    "recovery:status": "node scripts/pause-writes.mjs status",
     "release:gate": "bash scripts/release-gate.sh"
   },
   "dependencies": {
