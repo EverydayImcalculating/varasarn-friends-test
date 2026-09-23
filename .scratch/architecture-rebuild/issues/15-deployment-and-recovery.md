@@ -8,7 +8,7 @@ Status: needs-info
 
 - [ ] Deployment instructions identify the required Google, Neon, and Vercel configuration, safe secret handling, environment separation, and a production-like build check.
 - [ ] An automated export or equivalent recovery mechanism retains usable database backups without routine manual action and documents retention and access control.
-- [ ] A restore exercise into an isolated environment succeeds, with course/review counts and access policies verified after recovery.
+- [x] A restore exercise into an isolated environment succeeds, with course/review counts and access policies verified after recovery.
 - [ ] Current free-tier terms and quotas, including Vercel eligibility and Neon's idle-resume behavior, are checked before launch; an eligible static-host fallback is documented if Vercel terms do not fit.
 - [ ] The recovery procedure explains how to pause cutover or return to the old read-only data export without silently losing new writes.
 
@@ -21,3 +21,7 @@ The recovery guide now records that Vercel Hobby must be reassessed for organiza
 ### 2026-09-23 — Production recovery snapshot created
 
 Created Neon snapshot `snap-wispy-river-b3otmaob` (`recovery-20260923T085735Z`) from the production branch at `2026-09-23T08:57:37Z`. The snapshot is now listed by `neon snapshots list --branch production`. An isolated restore exercise and post-restore permission/count verification remain required before cutover.
+
+### 2026-09-23 — Isolated restore exercise verified
+
+Restored `snap-wispy-river-b3otmaob` to the non-finalized isolated branch `recovery-verify-20260923` (`br-damp-king-b33kw7dp`) without changing production. The branch reached `ready`. A branch-scoped read-only verification returned 209 courses, 1 offering, and 0 reviews; a policy check found RLS enabled on 17 `app_private` tables. The restore remains un-finalized and is available for inspection.
