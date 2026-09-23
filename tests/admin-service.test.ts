@@ -83,6 +83,28 @@ describe('AdminService', () => {
     expect(calls[0]?.name).toBe('bulk_import_offerings')
   })
 
+  it('previews a bulk offering import through the administrator preflight RPC without normalizing rows client-side', async () => {
+    const calls: Array<{ name: string; args?: Record<string, unknown> }> = []
+    const service = new AdminService({
+      rpc: async (name, args) => {
+        calls.push({ name, args })
+        return {
+          data: [
+            { row_number: 1, course_code: 'JC100', academic_year: 2569, semester: '1', section: '2', instructor_name: 'อาจารย์เอ', day_of_week: 2, starts_at: '09:00', ends_at: '11:00', valid: true, action: 'create', reason: null, offering_id: null },
+            { row_number: 2, course_code: 'ZZUNKNOWN', academic_year: 2569, semester: '1', section: '1', instructor_name: null, day_of_week: 1, starts_at: '09:00', ends_at: '10:00', valid: false, action: null, reason: 'unknown course', offering_id: null },
+          ],
+          error: null,
+        }
+      },
+    })
+    const rows = [{ courseCode: ' jc 100 ', academicYear: 2569 }]
+    await expect(service.previewOfferingImport(rows)).resolves.toEqual([
+      { rowNumber: 1, courseCode: 'JC100', academicYear: 2569, semester: '1', section: '2', instructorName: 'อาจารย์เอ', dayOfWeek: 2, startsAt: '09:00', endsAt: '11:00', valid: true, action: 'create', reason: null, offeringId: null },
+      { rowNumber: 2, courseCode: 'ZZUNKNOWN', academicYear: 2569, semester: '1', section: '1', instructorName: null, dayOfWeek: 1, startsAt: '09:00', endsAt: '10:00', valid: false, action: null, reason: 'unknown course', offeringId: null },
+    ])
+    expect(calls).toEqual([{ name: 'preview_offering_import', args: { p_rows: rows } }])
+  })
+
   it('uses the administrator RPCs to list and resolve offering proposals without exposing proposer identity', async () => {
     const calls: Array<{ name: string; args?: Record<string, unknown> }> = []
     const service = new AdminService({ rpc: async (name, args) => { calls.push({ name, args }); return { data: name === 'list_pending_offering_proposals' ? [{ id: 'proposal-1', course_code: 'JC100', academic_year: 2569, semester: '1', section: '2', instructor_name: 'อาจารย์เอ' }] : null, error: null } } })
