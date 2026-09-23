@@ -55,6 +55,11 @@ export class AdminService {
     if (error) throw new Error(error.message)
   }
 
+  async updateCategory(categoryId: string, name: string): Promise<void> {
+    const { error } = await this.client.rpc('update_category', { p_category_id: categoryId, p_name: name.trim() })
+    if (error) throw new Error(error.message)
+  }
+
   async archiveCourse(courseId: string): Promise<void> {
     const { error } = await this.client.rpc('archive_course', { p_course_id: courseId })
     if (error) throw new Error(error.message)

@@ -43,6 +43,13 @@
       "when": 1790138000000,
       "tag": "0005_manageable_courses",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1790138200000,
+      "tag": "0006_update_category",
+      "breakpoints": true
     }
   ]
 }
