@@ -46,3 +46,7 @@ An unauthenticated request to the stable test deployment alias redirects to Verc
 ### 2026-09-23 — Original home interface restored in Vue
 
 The original UI source is `git show 0b1b1c8^:index.html`; `old-repo/index.html` is a later Vite shell. The Vue home page now uses the original banner, about text, student-committee label, contact links, heading, search field, medium-screen three-column cards, purple design tokens, Prompt/Kanit fonts, and Bootstrap Icons. The navigation and contact controls remain Vue-managed. `npm test -- --run` passed 22 tests and `npm run build` passed. Course-detail modal, My Reviews layout, and live visual/browser acceptance still need comparison; this does not close Ticket 01.
+
+### 2026-09-23 — Student detail and My Reviews styling aligned
+
+The selected course view now uses the original modal-like overlay, gradient title treatment, responsive review cards, and filtered review controls. My Reviews uses the original two-column card treatment on desktop and one column on narrow screens. Existing proposal and moderation controls remain available but are not part of the visual acceptance target. `npm test -- --run` passed 22 tests and `npm run build` passed.
