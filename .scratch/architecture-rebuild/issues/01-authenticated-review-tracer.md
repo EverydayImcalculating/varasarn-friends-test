@@ -58,3 +58,7 @@ The signed-out screen now retains the branded banner and about shell while clear
 ### 2026-09-23 — Signed-out screen matched to original reference
 
 Compared with the original reference capture, the signed-out route now hides the authenticated navigation, fills the viewport with the mint dotted background, and centers the white rounded login card. The card contains the original banner, Thai description, dashed Google prompt, and compact Google sign-in control; the action still calls the Neon Auth Google flow. `npm test -- --run` passed 22 tests, `npm run build` passed, and `git diff --check` passed.
+
+### 2026-09-23 — Google sign-in mark refined
+
+The sign-in control now uses the full multicolor Google G mark shown in the original reference instead of a single-color Bootstrap icon. The account row shown after choosing Google is the Google OAuth account chooser, rendered by Google during the Neon Auth redirect; the app does not fabricate a recent account before authentication.
