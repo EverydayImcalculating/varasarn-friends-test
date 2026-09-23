@@ -8,3 +8,4 @@ dist/
 .neon
 .vercel
 .env*
+*xlsx
