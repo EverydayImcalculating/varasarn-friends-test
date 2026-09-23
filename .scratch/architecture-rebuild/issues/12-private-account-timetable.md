@@ -39,3 +39,9 @@ Added unit tests for `TimetableService.add`/`remove`/`replace` and error propaga
 `npm test -- --run` passed 30 tests, `npm run build` passed, and `git diff --check` passed. Checked off every item except the one requiring literal browser tests; the underlying behavior for it is now verified as above.
 
 **Not yet done:** migration `0029_revoke_public_timetable_grants.sql` has not been applied to production. Live browser acceptance — adding/removing sections, clearing the timetable, confirming persistence by signing in on a second browser, and confirming another account cannot see or touch it — still needs a real Google session, the same blocker as every other open ticket. Status stays `needs-info`.
+
+### 2026-09-23 — Migration 0029 applied to production; grants confirmed live
+
+With owner approval, ran `npm run db:migrate` (applied migrations through 30, up from 29) and `neon data-api refresh-schema --project-id soft-surf-84712820 --branch production`. A read-only check confirms `list_my_timetable`, `add_my_timetable_offering`, `remove_my_timetable_offering`, `clear_my_timetable`, `replace_my_timetable_offering`, and `list_approved_offering_meetings` are all now granted only to `authenticated` in production, with no `PUBLIC` grant on any of them. Rebuilt commit `f644217` locally and confirmed the deployed test app (`https://varasarn-friends-test-tau.vercel.app/`) serves the identical asset hashes. `npm test -- --run` passed 30 tests and `npm run build` passed.
+
+Live browser acceptance (adding/removing/clearing a timetable, confirming persistence on a second device, confirming another account can't touch it) still needs a real Google session. Status stays `needs-info`.
