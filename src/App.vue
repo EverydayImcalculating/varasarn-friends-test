@@ -5,6 +5,7 @@ import { AdminService, type AcademicPeriod, type Category, type ManagedCourse, t
 import { ReviewService, type VisibleReview } from './services/reviews'
 import { TimetableService } from './services/timetable-client'
 import { overlaps, type Meeting } from './services/timetable'
+import { ProposalService, type OfferingProposal } from './services/proposals'
 
 type Course = { id: string; code: string; name_th: string; category_name: string }
 type Offering = { id: string; section: string; academic_year: number; semester: string; instructor_name: string | null }
@@ -14,6 +15,7 @@ const selected = ref<Course | null>(null); const rating = ref(5); const text = r
 const service = computed(() => neon ? new ReviewService(neon as any) : null)
 const adminService = computed(() => neon ? new AdminService(neon as any) : null)
 const timetableService = computed(() => neon ? new TimetableService(neon as any) : null)
+const proposalService = computed(() => neon ? new ProposalService(neon as any) : null)
 const accessRole = ref<'owner' | 'administrator' | null>(null); const dashboard = ref(false)
 const timetable = ref(false); const timetableEntries = ref<TimetableEntry[]>([])
 const myReviewsScreen = ref(false); const myReviews = ref<import('./services/reviews').MyReview[]>([])
@@ -22,7 +24,7 @@ const categories = ref<Category[]>([]); const categoryName = ref(''); const cour
 const managedCourses = ref<ManagedCourse[]>([]); const editingCourseId = ref<string | null>(null)
 const mergeSourceId = ref(''); const mergeTargetId = ref(''); const mergePreview = ref<MergePreview | null>(null)
 const periods = ref<AcademicPeriod[]>([]); const periodYear = ref(new Date().getFullYear() + 543); const periodSemester = ref('1'); const offeringCourseId = ref(''); const offeringYear = ref(new Date().getFullYear() + 543); const offeringSemester = ref('1'); const offeringSection = ref(''); const offeringInstructor = ref(''); const offeringDay = ref(1); const offeringStart = ref('09:00'); const offeringEnd = ref('12:00')
-const proposals = ref<PendingProposal[]>([]); const proposalYear = ref(new Date().getFullYear() + 543); const proposalSemester = ref('1'); const proposalSection = ref(''); const proposalInstructor = ref(''); const myProposals = ref<Array<{ id: string; academic_year: number; semester: string; section: string; status: string }>>([])
+const proposals = ref<PendingProposal[]>([]); const proposalYear = ref(new Date().getFullYear() + 543); const proposalSemester = ref('1'); const proposalSection = ref(''); const proposalInstructor = ref(''); const myProposals = ref<OfferingProposal[]>([])
 const searchTerm = ref(''); const categoryFilter = ref('')
 const filteredCourses = computed(() => courses.value.filter((course) => {
   const search = searchTerm.value.trim().toLowerCase()
@@ -102,8 +104,8 @@ async function previewMerge() { if (!adminService.value || !mergeSourceId.value 
 async function confirmMerge() { if (!adminService.value || !mergePreview.value || !window.confirm(`รวม ${mergePreview.value.source_code} เข้ากับ ${mergePreview.value.target_code} ใช่หรือไม่?`)) return; try { await adminService.value.mergeCourse(mergeSourceId.value, mergeTargetId.value); mergePreview.value = null; mergeSourceId.value = ''; mergeTargetId.value = ''; await Promise.all([openDashboard(), loadCatalog()]) } catch (cause) { error.value = cause instanceof Error ? cause.message : 'ไม่สามารถรวมรายวิชาได้' } }
 async function addPeriod() { if (!adminService.value) return; try { await adminService.value.createAcademicPeriod(periodYear.value, periodSemester.value); await openDashboard() } catch (cause) { error.value = cause instanceof Error ? cause.message : 'ไม่สามารถเพิ่มภาคการศึกษาได้' } }
 async function addOffering() { if (!adminService.value) return; try { await adminService.value.createOffering({ courseId: offeringCourseId.value, academicYear: offeringYear.value, semester: offeringSemester.value, section: offeringSection.value, instructorName: offeringInstructor.value, day: offeringDay.value, startsAt: offeringStart.value, endsAt: offeringEnd.value }); offeringSection.value = ''; offeringInstructor.value = ''; await openDashboard() } catch (cause) { error.value = cause instanceof Error ? cause.message : 'ไม่สามารถเพิ่มกลุ่มเรียนได้' } }
-async function submitProposal() { if (!selected.value) return; const result = await (neon as any).rpc('create_offering_proposal', { p_course_id: selected.value.id, p_academic_year: proposalYear.value, p_semester: proposalSemester.value, p_section: proposalSection.value, p_instructor_name: proposalInstructor.value }); if (result.error) { error.value = result.error.message; return }; proposalSection.value = ''; proposalInstructor.value = ''; await loadMyProposals() }
-async function loadMyProposals() { const result = await (neon as any).rpc('list_my_offering_proposals'); if (result.error) { error.value = result.error.message; return }; myProposals.value = result.data ?? [] }
+async function submitProposal() { if (!selected.value || !proposalService.value) return; try { await proposalService.value.create(selected.value.id, proposalYear.value, proposalSemester.value, proposalSection.value, proposalInstructor.value); proposalSection.value = ''; proposalInstructor.value = ''; await loadMyProposals() } catch (cause) { error.value = cause instanceof Error ? cause.message : 'ไม่สามารถส่งข้อเสนอกลุ่มเรียนได้' } }
+async function loadMyProposals() { if (!proposalService.value) return; try { myProposals.value = await proposalService.value.listMine() } catch (cause) { error.value = cause instanceof Error ? cause.message : 'ไม่สามารถโหลดข้อเสนอของฉันได้' } }
 async function resolveProposal(id: string, approve: boolean) { if (!adminService.value) return; try { await adminService.value.resolveOfferingProposal(id, approve); await openDashboard() } catch (cause) { error.value = cause instanceof Error ? cause.message : 'ไม่สามารถดำเนินการข้อเสนอได้' } }
 async function grantAdministrator(userId: string) {
   if (!adminService.value) return
