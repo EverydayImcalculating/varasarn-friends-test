@@ -78,3 +78,7 @@ The review filters now use the original term choices (`ทุกเทอม`, `
 ### 2026-09-23 — Review term and academic year selectors completed
 
 The create-review form now includes editable `เทอมที่เรียน` and `ปีการศึกษา` selectors with the same choices as the review filters. They initialize from the selected offering and remain available for correction before submission. `npm test -- --run` passed 22 tests, `npm run build` passed, and `git diff --check` passed.
+
+### 2026-09-23 — Public test shell rechecked
+
+The test deployment URL `https://varasarn-friends-test-tau.vercel.app/` now returns HTTP 200 and the Vite application shell, so the earlier Vercel SSO blocker is no longer present for the shell. Full Ticket 01 closure still requires the authenticated two-account, cross-user, Safari, and sign-out token checks.
