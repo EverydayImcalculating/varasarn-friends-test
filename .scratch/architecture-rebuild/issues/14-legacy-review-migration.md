@@ -11,3 +11,11 @@ Status: needs-info
 - [ ] Historical schedule details remain explicitly unverified and cannot become selectable current offerings until an administrator approves them.
 - [ ] Signed-in readers see imported reviews in the anonymous projection; no user can edit, withdraw, or claim an ownerless legacy review through ordinary controls.
 - [ ] Tests cover the repository's four-review snapshot and a fresh-export fixture, including count reconciliation, unmatched references, and absence of legacy emails from target data.
+
+## Comments
+
+### 2026-09-23 — Owner-only confirmed import deployed
+
+Migration `0021_import_legacy_reviews.sql` adds an owner-checked, transactional confirmed import API. It accepts only normalized rows, rejects invalid or unmatched relationships, inserts no provider user ID or email, creates rejected historical offerings without meetings, and idempotently inserts ownerless legacy reviews with a private audit summary. The Data API schema cache was refreshed after deployment.
+
+The dry-run workbook test verifies all four source reviews normalize without any `@` value in output and are marked `scheduleVerified: false`. A fresh-export fixture, live owner import run, and anonymous-reader acceptance remain to be recorded.
