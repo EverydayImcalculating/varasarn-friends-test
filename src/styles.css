@@ -61,7 +61,8 @@ h1, h2, h3, h4, h5, h6 { font-family: 'Kanit', sans-serif; }
 .review-box { background: var(--white); border-radius: var(--radius-md); padding: 18px; margin-bottom: 12px; border: 1px solid var(--line); box-shadow: 0 2px 8px rgba(0,0,0,.02); overflow-wrap: break-word; }
 .stars { color: var(--amber-500); font-weight: 500; letter-spacing: 2px; }
 .form-control, .form-select { border-radius: var(--radius-md); border: 1.5px solid var(--line); padding: 10px 14px; }
-.sign-in { min-height: calc(100vh - 110px); display: grid; place-items: center; }
+.sign-in { min-height: calc(100vh - 110px); }
+.login-shell { max-width: 960px; margin: 0 auto; }
 .auth-card { max-width: 560px; padding: 3rem 2rem; background: var(--white); border: 1px solid var(--line); border-radius: var(--radius-lg); box-shadow: var(--shadow-card); }
 .floating-contact-btn { position: fixed; bottom: 22px; right: 22px; z-index: 1050; border-radius: var(--radius-pill); padding: 14px 24px; box-shadow: var(--shadow-float); font-weight: 500; }
 .container > section:has(> h1 + .review-box) { position: fixed; inset: 0; z-index: 1040; overflow-y: auto; padding: 2rem 1rem 4rem; background: rgba(42,27,71,.48); }
@@ -73,7 +74,10 @@ h1, h2, h3, h4, h5, h6 { font-family: 'Kanit', sans-serif; }
 .container > section:has(> .d-flex h1.h3) > article { display: inline-block; vertical-align: top; width: calc(50% - 8px); margin-right: 8px; }
 .container > section:has(> .d-flex h1.h3) > article .review-box { height: 100%; }
 .container > section:has(> .d-flex h1.h3) > article:nth-of-type(even) { margin-right: 0; }
-.contact-panel { position: fixed; bottom: 80px; right: 22px; z-index: 1051; width: min(330px, calc(100vw - 44px)); padding: 20px; background: var(--white); border: 1px solid var(--line); border-radius: var(--radius-lg); box-shadow: var(--shadow-float); }
+.contact-panel { position: fixed; inset: 0; z-index: 1051; display: grid; place-items: center; padding: 1rem; background: rgba(42,27,71,.48); }
+.contact-modal-card { width: min(380px, calc(100vw - 32px)); background: var(--white); border: 0; border-radius: var(--radius-lg); box-shadow: 0 20px 40px rgba(0,0,0,.1); overflow: hidden; }
+.contact-modal-header { display: flex; justify-content: space-between; align-items: center; padding: 20px 24px; background: var(--purple-50); }
+.contact-modal-body { padding: 1.5rem; text-align: center; }
 .contact-line { background: #00b900; }
 .contact-instagram { background: linear-gradient(45deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%); }
 .timetable-container { overflow-x: auto; background: var(--white); border: 1px solid var(--line); border-radius: var(--radius-lg); padding: 20px; box-shadow: var(--shadow-card); }

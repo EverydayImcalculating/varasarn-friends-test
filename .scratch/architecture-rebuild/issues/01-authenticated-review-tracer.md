@@ -50,3 +50,7 @@ The original UI source is `git show 0b1b1c8^:index.html`; `old-repo/index.html` 
 ### 2026-09-23 — Student detail and My Reviews styling aligned
 
 The selected course view now uses the original modal-like overlay, gradient title treatment, responsive review cards, and filtered review controls. My Reviews uses the original two-column card treatment on desktop and one column on narrow screens. Existing proposal and moderation controls remain available but are not part of the visual acceptance target. `npm test -- --run` passed 22 tests and `npm run build` passed.
+
+### 2026-09-23 — Signed-out landing and contact modal corrected
+
+The signed-out screen now retains the branded banner and about shell while clearly presenting Google sign-in. The floating contact control opens a centered modal matching the original light header and action buttons. All Instagram destinations use the requested canonical `https://www.instagram.com/varasarn_official` URL, which returned HTTP 200 during verification. `npm test -- --run` passed 22 tests and `npm run build` passed.
