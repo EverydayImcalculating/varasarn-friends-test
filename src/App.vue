@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
 import { neon, signInWithGoogle } from './neon'
-import { AdminService, type Category, type RoleAssignment, type VerifiedAccount } from './services/admin'
+import { AdminService, type Category, type ManagedCourse, type RoleAssignment, type VerifiedAccount } from './services/admin'
 import { ReviewService, type VisibleReview } from './services/reviews'
 
 type Course = { id: string; code: string; name_th: string; category_name: string }
@@ -13,6 +13,7 @@ const adminService = computed(() => neon ? new AdminService(neon as any) : null)
 const accessRole = ref<'owner' | 'administrator' | null>(null); const dashboard = ref(false)
 const members = ref<RoleAssignment[]>([]); const verifiedAccounts = ref<VerifiedAccount[]>([])
 const categories = ref<Category[]>([]); const categoryName = ref(''); const courseCode = ref(''); const courseName = ref(''); const courseCategoryId = ref('')
+const managedCourses = ref<ManagedCourse[]>([])
 const searchTerm = ref(''); const categoryFilter = ref('')
 const filteredCourses = computed(() => courses.value.filter((course) => {
   const search = searchTerm.value.trim().toLowerCase()
@@ -47,6 +48,7 @@ async function openDashboard() {
   if (adminService.value) {
     try {
       categories.value = await adminService.value.listCategories()
+      managedCourses.value = await adminService.value.listManageableCourses()
       if (!courseCategoryId.value && categories.value[0]) courseCategoryId.value = categories.value[0].id
       if (accessRole.value === 'owner') {
         ;[members.value, verifiedAccounts.value] = await Promise.all([adminService.value.listRoleAssignments(), adminService.value.listVerifiedAccounts()])
@@ -91,6 +93,7 @@ onMounted(async () => { if (!neon) { loading.value = false; return }; const sess
         <h1>แดชบอร์ดผู้ดูแล</h1><p v-if="error" class="text-danger" role="alert">{{ error }}</p>
         <h2 class="h4 mt-4">เพิ่มหมวดหมู่</h2><div class="input-group mb-3"><input v-model="categoryName" class="form-control" aria-label="ชื่อหมวดหมู่"><button class="btn btn-purple" @click="addCategory">เพิ่ม</button></div>
         <h2 class="h4">เพิ่มรายวิชา</h2><div class="row g-2"><div class="col-md-3"><input v-model="courseCode" class="form-control" placeholder="รหัสวิชา"></div><div class="col-md-4"><input v-model="courseName" class="form-control" placeholder="ชื่อรายวิชา"></div><div class="col-md-3"><select v-model="courseCategoryId" class="form-select"><option v-for="category in categories" :key="category.id" :value="category.id">{{ category.name }}</option></select></div><div class="col-md-2"><button class="btn btn-purple w-100" @click="addCourse">เพิ่มรายวิชา</button></div></div>
+        <h2 class="h4 mt-4">รายวิชา</h2><ul class="list-group"><li v-for="course in managedCourses" :key="course.id" class="list-group-item d-flex justify-content-between align-items-center"><span><strong>{{ course.code }}</strong> · {{ course.name_th }} <small class="text-muted">{{ course.category_name }} · {{ course.status }}</small></span><button v-if="course.status === 'approved'" class="btn btn-sm btn-outline-danger" @click="archiveCourse(course.id)">เก็บเข้าคลัง</button></li></ul>
       </section>
       <template v-else>
         <div class="about mb-4"><h2>เกี่ยวกับ Varasarn Close Friends</h2><p>พื้นที่รวบรวมความคิดเห็นจากนักศึกษาคณะวารสารศาสตร์และสื่อสารมวลชน</p></div>
