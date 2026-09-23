@@ -151,7 +151,22 @@ async function signOut() {
   contactOpen.value = false
   displayName.value = 'บัญชีของฉัน'
 }
-onMounted(async () => { if (!neon) { loading.value = false; return }; const session = await (neon.auth as any).getSession(); signedIn.value = Boolean(session?.data?.user); if (signedIn.value) { const user = session.data.user; displayName.value = user.name || user.email?.split('@')[0] || 'บัญชีของฉัน'; await Promise.all([loadCatalog(), loadAccess(), adminService.value?.listCategories().then((items) => { categories.value = items })]) } else loading.value = false })
+onMounted(async () => {
+  if (!neon) { loading.value = false; return }
+  try {
+    const session = await (neon.auth as any).getSession()
+    signedIn.value = Boolean(session?.data?.user)
+    if (signedIn.value) {
+      const user = session.data.user
+      displayName.value = user.name || user.email?.split('@')[0] || 'บัญชีของฉัน'
+      await Promise.all([loadCatalog(), loadAccess(), adminService.value?.listCategories().then((items) => { categories.value = items })])
+    } else loading.value = false
+  } catch (cause) {
+    signedIn.value = false
+    loading.value = false
+    error.value = cause instanceof Error ? cause.message : 'ไม่สามารถตรวจสอบสถานะการเข้าสู่ระบบได้'
+  }
+})
 </script>
 
 <template>

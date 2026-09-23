@@ -90,3 +90,7 @@ The test deployment URL `https://varasarn-friends-test-tau.vercel.app/` now retu
 ### 2026-09-23 — Data API credential rejection rechecked
 
 The deployed Neon Data API rejected an unauthenticated catalog RPC with HTTP 400 and `missing authentication credentials`, and rejected a malformed bearer token with HTTP 400 and `Provided authentication token is not a valid JWT encoding`. No credential or secret was exposed during the check. Authenticated cross-user behavior still requires the two-account browser acceptance.
+
+### 2026-09-23 — Session bootstrap failure state hardened
+
+The Vue session bootstrap now catches Neon Auth session and initial protected-data failures, clears the signed-in state, stops loading, and shows an error message instead of leaving a blank or indefinitely loading screen. `npm test -- --run` passed 22 tests, `npm run build` passed, and `git diff --check` passed.
