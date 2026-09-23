@@ -93,6 +93,7 @@ function courseColor(code: string) { return `timetable-color-${(code.charCodeAt(
 function timetableStyle(entry: TimetableEntry) { const start = Number(timeValue(entry.starts_at).slice(0,2)) * 60 + Number(timeValue(entry.starts_at).slice(3)); const end = Number(timeValue(entry.ends_at).slice(0,2)) * 60 + Number(timeValue(entry.ends_at).slice(3)); return { left: `${Math.max(0, ((start - 480) / 720) * 100)}%`, width: `${Math.min(100, ((end - start) / 720) * 100)}%` } }
 async function addToTimetable(offering: Offering, review?: VisibleReview) {
   if (!timetableService.value || !selected.value) return
+  error.value = ''
   try {
     const available = await (neon as any).rpc('list_approved_offerings', { p_course_id: selected.value.id })
     if (available.error) throw new Error(available.error.message)
@@ -106,6 +107,13 @@ async function addToTimetable(offering: Offering, review?: VisibleReview) {
     if (result.error) throw new Error(result.error.message)
     const meetings = ((result.data ?? []) as Array<{ day_of_week: number; starts_at: string; ends_at: string }>).filter((row) => isValidMeeting({ day: row.day_of_week, start: timeValue(row.starts_at), end: timeValue(row.ends_at) }))
     if (!meetings.length) throw new Error('รายวิชานี้ไม่มีเวลาเรียนที่ใช้งานได้')
+    if (review) {
+      const latestMeetings = meetings.map((meeting) => ({ day: meeting.day_of_week, start: timeValue(meeting.starts_at), end: timeValue(meeting.ends_at) }))
+      if (JSON.stringify(offeringMeetings.value[offering.id]) !== JSON.stringify(latestMeetings)) {
+        offeringMeetings.value[offering.id] = latestMeetings
+        throw new Error('เวลาเรียนทางการเปลี่ยนไป โปรดตรวจสอบเวลาใหม่ก่อนเพิ่มลงตาราง')
+      }
+    }
     await loadTimetable()
     if (isSelected(offering)) return
     const currentCourse = timetableEntries.value.filter((entry) => entry.course_code === selected.value!.code)

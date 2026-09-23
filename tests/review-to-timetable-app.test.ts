@@ -133,6 +133,20 @@ describe('review to personal timetable', () => {
     wrapper.unmount()
   })
 
+  it('shows a changed official meeting before allowing a review-linked selection', async () => {
+    const wrapper = await openReview()
+    fixture.meetings = [{ day_of_week: 2, starts_at: '13:00:00', ends_at: '15:00:00' }]
+    await wrapper.get('.review-card button').trigger('click')
+    await flushPromises()
+    expect(fixture.calls.some(({ name }) => name === 'add_my_timetable_offering')).toBe(false)
+    expect(wrapper.get('.review-card').text()).toContain('อังคาร 13:00–15:00')
+    expect(wrapper.get('.course-review-body [role="alert"]').text()).toContain('เวลาเรียนทางการเปลี่ยนไป')
+    await wrapper.get('.review-card button').trigger('click')
+    await flushPromises()
+    expect(fixture.calls.some(({ name }) => name === 'add_my_timetable_offering')).toBe(true)
+    wrapper.unmount()
+  })
+
   it('asks before replacing an existing section and leaves it alone when canceled', async () => {
     fixture.timetable = [{ offering_id: 'old-offering', course_code: 'JC232', course_name: 'เทคนิคการถ่ายทำ', section: '320002', day_of_week: 4, starts_at: '13:00:00', ends_at: '15:00:00' }]
     vi.stubGlobal('confirm', vi.fn(() => false))

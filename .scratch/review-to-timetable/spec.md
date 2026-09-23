@@ -33,6 +33,7 @@ Restore the original review-to-timetable journey in the course dialog. When a vi
 - Match a visible review to the current approved-offering list by the dialog's course plus exact academic year and semester and normalized section. Only a unique approved offering with valid official meeting intervals is eligible. If several offerings match, do not choose one automatically.
 - Use the approved offering ID with the existing account-scoped timetable operations. Never save the review ID, reported teacher, reported day/time, or author as an official timetable selection. Label reported and official details distinctly if they differ.
 - Recheck offering eligibility and the current account timetable when the action is pressed. Warn before replacing another section of the course or accepting an overlap. Use the existing atomic replacement operation for same-course changes. Keep the server's eligibility and account-scope checks authoritative if data changes after the dialog opened.
+- If approved meeting times change while the dialog is open, show the new official times and require another press after the reader has reviewed them.
 - After a successful write, reload the timetable and show an acknowledgement with an option to open it, matching the original confirm-and-view flow. Canceling the view prompt leaves the user in the course dialog with the saved selection visible.
 - Keep the original visual language in this existing interface: purple modal header, white review card, green timetable action, and colored timetable grid. Make the action and state usable with a keyboard and on narrow screens.
 - Treat the review's creation date as optional display data; malformed or missing dates must never render “Invalid Date” or block the timetable action.
@@ -68,3 +69,9 @@ The signed-in Vue flow test covers add and view, unavailable and ambiguous match
 ### 2026-09-23 — Deployed bundle verified; browser acceptance remains open
 
 Commit `e448242` is on `origin/main`. The test site at `https://varasarn-friends-test-tau.vercel.app/` serves `index-Dt-nCbNd.js` and `index-DVHZ35z7.css`; the downloaded assets' SHA-256 hashes exactly match the local production build. The browser connection available to this session reported no connected browsers, so it could not inspect an authenticated Google session or compare the review dialog and timetable visually. The user was asked to connect a browser or provide screenshots. Keep `Status: needs-info` until that acceptance pass is recorded.
+
+### 2026-09-23 — Stale official meeting guard
+
+A review-linked add now compares fresh approved meeting rows with the times displayed in the open dialog. If they changed, the card updates the official times and asks the reader to review them before pressing add again. The signed-in flow test covers that the first click makes no write and the second click can save after the updated time is visible.
+
+`npm test -- --run` passed 67 tests in 12 files, `npm run build` passed, and `git diff --check` passed. The real signed-in browser acceptance remains open.
