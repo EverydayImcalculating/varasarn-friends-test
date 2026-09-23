@@ -50,6 +50,13 @@
       "when": 1790138200000,
       "tag": "0006_update_category",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1790138400000,
+      "tag": "0007_merge_courses",
+      "breakpoints": true
     }
   ]
 }
