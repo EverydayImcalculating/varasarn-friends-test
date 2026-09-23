@@ -82,3 +82,7 @@ The create-review form now includes editable `เทอมที่เรีย�
 ### 2026-09-23 — Public test shell rechecked
 
 The test deployment URL `https://varasarn-friends-test-tau.vercel.app/` now returns HTTP 200 and the Vite application shell, so the earlier Vercel SSO blocker is no longer present for the shell. Full Ticket 01 closure still requires the authenticated two-account, cross-user, Safari, and sign-out token checks.
+
+### 2026-09-23 — Release gate and deployment headers verified
+
+`npm run release:gate` passed with 22 tests and a production build. The public test deployment also returned HTTP/2 200 with the Vercel shell and strict transport security headers. The gate still correctly requests fresh export, restore, two-account permission, deployed Google sign-in, and idle-resume evidence before final cutover; those checks require the owner-controlled browser accounts.
