@@ -54,4 +54,12 @@ describe('AdminService', () => {
       { name: 'archive_course', args: { p_course_id: 'course-1' } },
     ])
   })
+
+  it('previews and confirms a course merge through administrator RPCs', async () => {
+    const calls: string[] = []
+    const service = new AdminService({ rpc: async (name) => { calls.push(name); return { data: name === 'preview_course_merge' ? [{ source_code: 'JC1', target_code: 'JC2', offerings_to_move: 2, reviews_preserved: 3 }] : null, error: null } } })
+    await expect(service.previewCourseMerge('source', 'target')).resolves.toMatchObject({ source_code: 'JC1', offerings_to_move: 2 })
+    await service.mergeCourse('source', 'target')
+    expect(calls).toEqual(['preview_course_merge', 'merge_course'])
+  })
 })

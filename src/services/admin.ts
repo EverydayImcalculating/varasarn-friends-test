@@ -5,6 +5,7 @@ export type RoleAssignment = VerifiedAccount & { role: 'owner' | 'administrator'
 export type CourseDraft = { code: string; nameTh: string; categoryId: string }
 export type Category = { id: string; name: string }
 export type ManagedCourse = { id: string; code: string; name_th: string; category_id: string; category_name: string; status: string }
+export type MergePreview = { source_code: string; target_code: string; offerings_to_move: number; reviews_preserved: number }
 
 export class AdminService {
   constructor(private readonly client: RpcClient) {}
@@ -78,6 +79,19 @@ export class AdminService {
       p_name_th: course.nameTh.trim(),
       p_category_id: course.categoryId,
     })
+    if (error) throw new Error(error.message)
+  }
+
+  async previewCourseMerge(sourceCourseId: string, targetCourseId: string): Promise<MergePreview> {
+    const { data, error } = await this.client.rpc('preview_course_merge', { p_source_course_id: sourceCourseId, p_target_course_id: targetCourseId })
+    if (error) throw new Error(error.message)
+    const preview = (data as MergePreview[] | null)?.[0]
+    if (!preview) throw new Error('ไม่พบข้อมูลสำหรับรวมรายวิชา')
+    return preview
+  }
+
+  async mergeCourse(sourceCourseId: string, targetCourseId: string): Promise<void> {
+    const { error } = await this.client.rpc('merge_course', { p_source_course_id: sourceCourseId, p_target_course_id: targetCourseId })
     if (error) throw new Error(error.message)
   }
 
