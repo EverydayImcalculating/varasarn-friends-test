@@ -13,3 +13,11 @@ Status: needs-info
 - [ ] Pending and rejected proposals do not appear as approved offerings and cannot receive new reviews or timetable selections.
 - [ ] Ordinary users cannot approve, reject, or inspect another user's private proposal data through direct requests; browser and data-interface tests cover the workflow.
 - [ ] Course merge preserves proposal references and the proposer's status view.
+
+## Comments
+
+### 2026-09-23 — Self-scoped proposal client and admin projection completed
+
+The student client validates and normalizes proposal fields before using only `create_offering_proposal` and `list_my_offering_proposals`. The Vue component now uses that typed service rather than direct RPC calls. Administrators have a separate pending-proposal projection and resolution client, backed by the deployed atomic resolution function. Service tests cover the student request shape and self-scoped read.
+
+The remaining work is to render the student status and administrator approval controls in the protected browser flows, then record cross-account acceptance evidence.
