@@ -1,0 +1,41 @@
+{
+  "version": "7",
+  "dialect": "postgresql",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "7",
+      "when": 1790107580438,
+      "tag": "0000_initial_review_tracer",
+      "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1790107684549,
+      "tag": "0001_security_api",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1790107800000,
+      "tag": "0002_owner_and_admin_access",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1790134547187,
+      "tag": "0003_cooing_northstar",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1790134800000,
+      "tag": "0004_course_and_category_management",
+      "breakpoints": true
+    }
+  ]
+}
