@@ -1,6 +1,6 @@
 # 01: Authenticated catalog and anonymous review tracer
 
-**What to build:** A Google-authenticated user can open the rebuilt app, inspect one approved course and offering, submit a rating and written review, and see that review without a public author identity. This first slice proves Vercel hosting, Neon Managed Better Auth, PostgreSQL data access, and ownership end to end; a failed browser-authentication proof triggers an explicit backend/hosting decision before expansion.
+**What to build:** A Google-authenticated user can open the rebuilt app, inspect one approved course, submit a rating and written review with self-reported class details even when no official offering exists, and see that review without a public author identity. This first slice proves Vercel hosting, Neon Managed Better Auth, PostgreSQL data access, and ownership end to end; a failed browser-authentication proof triggers an explicit backend/hosting decision before expansion.
 
 Blocked by: None (can start immediately)
 
@@ -12,11 +12,11 @@ Status: needs-info
 - [ ] Google is the only enabled sign-in method in Neon, not just the only visible button; alternate password, OTP, and other enabled-provider entry points are denied.
 - [ ] Google sign-in, session refresh, and sign-out work in a deployed Vue preview, including Safari or restrictive-cookie conditions; the sign-in/callback/static shell may be public, but protected data and actions reject signed-out access.
 - [ ] Sign-out clears local session and private displayed data. The observed lifetime of a copied bearer token after sign-out is recorded; immediate revocation is not a v1 requirement.
-- [ ] A signed-in user can read a seeded approved course and offering and publish one review with an integer overall rating from 1 to 5 and nonempty text.
-- [ ] The review is tied to the validated Neon Auth user ID and approved offering, not a typed email, raw Google subject, or spreadsheet row; a second record by that user for the offering is rejected across all review states.
+- [ ] A signed-in user can read an approved course and publish a review with an integer overall rating from 1 to 5, nonempty text, and self-reported class details without an official offering.
+- [ ] The review is tied to the validated Neon Auth user ID and approved course, not a typed email, raw Google subject, or spreadsheet row; a second record by that user for the same course, academic year, term, and normalized section is rejected across all review states.
 - [ ] Another signed-in user can read the review without author ID, email, token, or private revision data and cannot edit or withdraw it by calling the data interface directly; grants and exposed schemas prevent bypassing the anonymous projection.
 - [ ] Automated data-interface tests cover missing/invalid credentials, authenticated catalog read, review validation, concurrent duplicate prevention, direct author-data access, and denied cross-user mutation; browser acceptance uses two Google test accounts for sign-in and review submission.
-- [ ] The sign-in, catalog, course/review detail, and review composer have usable desktop and narrow-mobile layouts, visible labels/focus, and loading, empty, validation, and error states; the composer does not ask students to edit factual schedule fields.
+- [ ] The sign-in, catalog, course/review detail, and review composer have usable desktop and narrow-mobile layouts, visible labels/focus, and loading, empty, validation, and error states; the composer labels teacher and schedule entries as student-reported rather than official data.
 - [ ] Live acceptance uses an owner-controlled Neon project, Google OAuth configuration, and a deployed preview with secrets kept out of the repo; if Vue/cookie compatibility fails, document the result and revise the architecture before treating the ticket as complete.
 
 ## Comments
@@ -102,3 +102,7 @@ The review composer no longer silently returns when the selected course has no o
 ### 2026-09-23 — Review button made actionable
 
 The composer no longer disables the save button merely because the offering list is empty. It remains clickable until a request starts, allowing the explicit missing-offering error to be shown and making the failure diagnosable from the deployed UI. `npm test -- --run` passed 22 tests and `npm run build` passed.
+
+### 2026-09-23 — Review approval requirement changed by owner
+
+The owner confirmed that students should be able to submit a review with their own class details without waiting for an administrator to approve or create an offering. The ticket criteria above supersede earlier comments about requiring an approved offering. Official offerings remain the source for shared timetable selections; review context is self-reported. The current `create_review` RPC and Vue guard still enforce the old rule and must be changed before this ticket can close.
