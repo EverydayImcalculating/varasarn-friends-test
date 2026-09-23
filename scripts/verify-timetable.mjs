@@ -7,7 +7,7 @@ if (!connectionString || !expectedHost || new URL(connectionString).hostname !==
   throw new Error('Supply a direct connection and the exact isolated test branch host')
 }
 
-const timetableFunctions = ['list_my_timetable', 'add_my_timetable_offering', 'remove_my_timetable_offering', 'clear_my_timetable']
+const timetableFunctions = ['list_my_timetable', 'add_my_timetable_offering', 'remove_my_timetable_offering', 'clear_my_timetable', 'replace_my_timetable_offering', 'list_approved_offering_meetings']
 const client = new pg.Client({ connectionString })
 await client.connect()
 try {
@@ -21,7 +21,7 @@ try {
     assert.ok(grantees.includes('authenticated'), `${name} must be granted to authenticated`)
     assert.ok(!grantees.includes('PUBLIC'), `${name} must not be granted to PUBLIC`)
   }
-  console.log('PASS: list/add/remove/clear are granted to authenticated and not PUBLIC')
+  console.log('PASS: list/add/remove/clear/replace/list-meetings are granted to authenticated and not PUBLIC')
 
   // --- No function anywhere reads or writes timetable_selections for someone other than auth.user_id(). ---
   const readers = (await client.query(`
@@ -84,6 +84,24 @@ try {
   await assert.rejects(client.query('SELECT api.add_my_timetable_offering($1::uuid)', [approvedOffering]), /null value in column "user_id"/)
   await client.query('ROLLBACK TO SAVEPOINT no_identity')
   console.log('PASS: adding a selection is denied without an authenticated identity')
+
+  // --- Migration 0030: replace_my_timetable_offering must reject the same invalid offerings as add, not
+  // just a plain 'approved offering required' check -- otherwise replace was a bypass around add's
+  // selection rule (Ticket 13 item 2). The rejection fires before the auth.user_id()-scoped write, so it
+  // is verifiable here even without a real signed-in identity. ---
+  for (const [label, id] of [['pending', pendingOffering], ['rejected', rejectedOffering], ['archived-course', archivedCourseOffering], ['no-meeting', noMeetingOffering]]) {
+    await client.query('SAVEPOINT invalid_replace')
+    await assert.rejects(client.query('SELECT api.replace_my_timetable_offering($1::uuid)', [id]), /approved offering with meeting time required/, `${label} offering must be rejected by replace`)
+    await client.query('ROLLBACK TO SAVEPOINT invalid_replace')
+  }
+  console.log('PASS: replace_my_timetable_offering rejects pending, rejected, archived-course, and meetingless offerings, matching add')
+
+  // --- A valid offering clears replace's validation and reaches the identity-scoped write, which is then
+  // denied the same way add is without a real signed-in identity. ---
+  await client.query('SAVEPOINT replace_no_identity')
+  await assert.rejects(client.query('SELECT api.replace_my_timetable_offering($1::uuid)', [approvedOffering]), /null value in column "user_id"/)
+  await client.query('ROLLBACK TO SAVEPOINT replace_no_identity')
+  console.log('PASS: a valid offering passes replace validation and is denied only for lacking an authenticated identity')
 
   // --- Two accounts' timetables are independent, and each only ever sees their own via the WHERE clause
   // the RPC uses (auth.user_id() cannot be faked here without a real JWT, so this exercises the same
