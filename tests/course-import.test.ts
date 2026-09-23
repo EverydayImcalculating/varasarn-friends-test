@@ -10,7 +10,7 @@ const runImport = async (file: string) => {
 
 describe('course importer', () => {
   it('reads the headerless workbook snapshot without using row numbers as IDs', async () => {
-    const report = await runImport('สำเนาของ เว็บรีวิววิชา.xlsx')
+    const report = await runImport('old-repo/สำเนาของ เว็บรีวิววิชา.xlsx')
     expect(report.sourceRows).toBeGreaterThan(200)
     expect(report.accepted).toBeGreaterThan(200)
     expect(report.courses[0]).toMatchObject({ code: expect.any(String), sourceRow: expect.any(Number) })
