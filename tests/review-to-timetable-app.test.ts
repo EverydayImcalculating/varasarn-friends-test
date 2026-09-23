@@ -1,0 +1,190 @@
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { flushPromises, mount } from '@vue/test-utils'
+import App from '../src/App.vue'
+
+const fixture = vi.hoisted(() => ({
+  offerings: [{ id: 'offering-1', section: '320001', academic_year: 2568, semester: '1', instructor_name: 'อ. อ้อม' }],
+  reviews: [{ id: 'review-1', rating: 5, text: 'สนุกมาก', created_at: '2026-09-23T10:00:00Z', section: '320001', semester: '1', academic_year: 2568, instructor_name: 'อ. อ้อม', day_of_week: 4, starts_at: '09:30:00', ends_at: '12:30:00' }],
+  meetings: [{ day_of_week: 4, starts_at: '09:30:00', ends_at: '12:30:00' }],
+  timetable: [] as Array<{ offering_id: string; course_code: string; course_name: string; section: string; day_of_week: number; starts_at: string; ends_at: string }>,
+  writeError: null as string | null,
+  calls: [] as Array<{ name: string; args?: Record<string, unknown> }>,
+}))
+
+vi.mock('../src/neon', () => ({
+  neon: {
+    auth: { getSession: async () => ({ data: { user: { id: 'user-1', email: 'student@example.com', name: 'Student' } } }), signOut: async () => undefined },
+    rpc: async (name: string, args?: Record<string, unknown>) => {
+      fixture.calls.push({ name, args })
+      if (name === 'list_approved_catalog') return { data: [{ id: 'course-1', code: 'JC232', name_th: 'เทคนิคการถ่ายทำ', category_name: 'วิชาเอก' }], error: null }
+      if (name === 'list_approved_offerings') return { data: fixture.offerings, error: null }
+      if (name === 'list_visible_reviews') return { data: fixture.reviews, error: null }
+      if (name === 'list_approved_offering_meetings') return { data: fixture.meetings, error: null }
+      if (name === 'list_my_timetable') return { data: fixture.timetable, error: null }
+      if (name === 'add_my_timetable_offering' || name === 'replace_my_timetable_offering') {
+        if (fixture.writeError) return { data: null, error: { message: fixture.writeError } }
+        fixture.timetable = [...fixture.timetable.filter((entry) => name !== 'replace_my_timetable_offering' || entry.course_code !== 'JC232'), { offering_id: String(args?.p_offering_id), course_code: 'JC232', course_name: 'เทคนิคการถ่ายทำ', section: '320001', day_of_week: 4, starts_at: '09:30:00', ends_at: '12:30:00' }]
+        return { data: null, error: null }
+      }
+      if (name === 'list_categories') return { data: [], error: null }
+      if (name === 'current_access') return { data: [{ role: null }], error: null }
+      if (name === 'list_my_offering_proposals') return { data: [], error: null }
+      throw new Error(`Unexpected RPC: ${name}`)
+    },
+  },
+  signInWithGoogle: async () => undefined,
+}))
+
+async function openReview() {
+  const wrapper = mount(App)
+  await flushPromises()
+  await wrapper.get('.course-card').trigger('click')
+  await flushPromises()
+  return wrapper
+}
+
+describe('review to personal timetable', () => {
+  afterEach(() => vi.unstubAllGlobals())
+  beforeEach(() => {
+    fixture.offerings = [{ id: 'offering-1', section: '320001', academic_year: 2568, semester: '1', instructor_name: 'อ. อ้อม' }]
+    fixture.reviews = [{ id: 'review-1', rating: 5, text: 'สนุกมาก', created_at: '2026-09-23T10:00:00Z', section: '320001', semester: '1', academic_year: 2568, instructor_name: 'อ. อ้อม', day_of_week: 4, starts_at: '09:30:00', ends_at: '12:30:00' }]
+    fixture.meetings = [{ day_of_week: 4, starts_at: '09:30:00', ends_at: '12:30:00' }]
+    fixture.timetable = []
+    fixture.writeError = null
+    fixture.calls.length = 0
+    vi.stubGlobal('confirm', vi.fn(() => true))
+  })
+
+  it('adds the approved offering from the review and offers to show the timetable', async () => {
+    const wrapper = await openReview()
+    const review = wrapper.get('.review-card')
+    expect(review.text()).toContain('320001')
+    expect(review.text()).toContain('พฤหัสบดี')
+    await review.get('button').trigger('click')
+    await flushPromises()
+    expect(fixture.calls).toContainEqual({ name: 'add_my_timetable_offering', args: { p_offering_id: 'offering-1' } })
+    expect(window.confirm).toHaveBeenCalledWith(expect.stringContaining('ตารางเรียน'))
+    expect(wrapper.get('.timetable-course').text()).toContain('JC232 (320001)')
+    wrapper.unmount()
+  })
+
+  it('keeps a historical review readable when there is no approved matching class', async () => {
+    fixture.offerings = []
+    fixture.reviews[0].created_at = 'invalid'
+    const wrapper = await openReview()
+    const review = wrapper.get('.review-card')
+    expect(review.text()).toContain('สนุกมาก')
+    expect(review.text()).toContain('ยังไม่มีกลุ่มเรียนที่อนุมัติ')
+    expect(review.text()).not.toContain('Invalid Date')
+    expect(review.find('button').exists()).toBe(false)
+    expect(fixture.calls.some(({ name }) => name === 'add_my_timetable_offering')).toBe(false)
+    wrapper.unmount()
+  })
+
+  it('shows the approved meeting when the review reports a different time', async () => {
+    fixture.meetings = [{ day_of_week: 2, starts_at: '13:00:00', ends_at: '15:00:00' }]
+    const wrapper = await openReview()
+    const review = wrapper.get('.review-card')
+    expect(review.text()).toContain('อังคาร 13:00–15:00')
+    expect(review.text()).toContain('พฤหัสบดี 09:30–12:30')
+    wrapper.unmount()
+  })
+
+  it('does not offer a timetable action when the approved class has no meeting', async () => {
+    fixture.meetings = []
+    const wrapper = await openReview()
+    expect(wrapper.get('.review-card').text()).toContain('ยังไม่มีกลุ่มเรียนที่อนุมัติพร้อมเวลาเรียน')
+    expect(wrapper.find('.review-card button').exists()).toBe(false)
+    wrapper.unmount()
+  })
+
+  it('does not guess when multiple approved classes match a review', async () => {
+    fixture.offerings.push({ id: 'offering-2', section: '320001', academic_year: 2568, semester: '1', instructor_name: 'อ. อ้อม' })
+    const wrapper = await openReview()
+    expect(wrapper.find('.review-card button').exists()).toBe(false)
+    wrapper.unmount()
+  })
+
+  it('shows the selected state instead of adding the same class twice', async () => {
+    fixture.timetable = [{ offering_id: 'offering-1', course_code: 'JC232', course_name: 'เทคนิคการถ่ายทำ', section: '320001', day_of_week: 4, starts_at: '09:30:00', ends_at: '12:30:00' }]
+    const wrapper = await openReview()
+    expect(wrapper.get('.review-card').text()).toContain('อยู่ในตารางแล้ว')
+    expect(wrapper.find('.review-card button').exists()).toBe(false)
+    wrapper.unmount()
+  })
+
+  it('does not add a class if approval changes after the dialog opens', async () => {
+    const wrapper = await openReview()
+    fixture.offerings = []
+    await wrapper.get('.review-card button').trigger('click')
+    await flushPromises()
+    expect(wrapper.get('.course-review-body [role="alert"]').text()).toContain('ไม่ได้เปิดให้เพิ่มลงตาราง')
+    expect(fixture.calls.some(({ name }) => name === 'add_my_timetable_offering')).toBe(false)
+    wrapper.unmount()
+  })
+
+  it('does not add a review-linked class if its approved period changes before selection', async () => {
+    const wrapper = await openReview()
+    fixture.offerings[0].semester = '2'
+    await wrapper.get('.review-card button').trigger('click')
+    await flushPromises()
+    expect(fixture.calls.some(({ name }) => name === 'add_my_timetable_offering')).toBe(false)
+    expect(wrapper.get('.course-review-body [role="alert"]').text()).toContain('รีวิวนี้')
+    wrapper.unmount()
+  })
+
+  it('asks before replacing an existing section and leaves it alone when canceled', async () => {
+    fixture.timetable = [{ offering_id: 'old-offering', course_code: 'JC232', course_name: 'เทคนิคการถ่ายทำ', section: '320002', day_of_week: 4, starts_at: '13:00:00', ends_at: '15:00:00' }]
+    vi.stubGlobal('confirm', vi.fn(() => false))
+    const wrapper = await openReview()
+    await wrapper.get('.review-card button').trigger('click')
+    await flushPromises()
+    expect(window.confirm).toHaveBeenCalledWith(expect.stringContaining('เปลี่ยนเป็นกลุ่ม 320001'))
+    expect(fixture.calls.some(({ name }) => name === 'replace_my_timetable_offering')).toBe(false)
+    expect(fixture.timetable[0].section).toBe('320002')
+    wrapper.unmount()
+  })
+
+  it('replaces the selected section after confirmation', async () => {
+    fixture.timetable = [{ offering_id: 'old-offering', course_code: 'JC232', course_name: 'เทคนิคการถ่ายทำ', section: '320002', day_of_week: 4, starts_at: '13:00:00', ends_at: '15:00:00' }]
+    const wrapper = await openReview()
+    await wrapper.get('.review-card button').trigger('click')
+    await flushPromises()
+    expect(fixture.calls).toContainEqual({ name: 'replace_my_timetable_offering', args: { p_offering_id: 'offering-1' } })
+    expect(fixture.timetable.map((entry) => entry.section)).toEqual(['320001'])
+    wrapper.unmount()
+  })
+
+  it('warns about another course that overlaps and saves only after confirmation', async () => {
+    fixture.timetable = [{ offering_id: 'other-offering', course_code: 'AP164', course_name: 'เศรษฐศาสตร์', section: '1', day_of_week: 4, starts_at: '10:00:00', ends_at: '11:00:00' }]
+    vi.stubGlobal('confirm', vi.fn(() => false))
+    const wrapper = await openReview()
+    await wrapper.get('.review-card button').trigger('click')
+    await flushPromises()
+    expect(window.confirm).toHaveBeenCalledWith(expect.stringContaining('AP164'))
+    expect(fixture.calls.some(({ name }) => name === 'add_my_timetable_offering')).toBe(false)
+    wrapper.unmount()
+  })
+
+  it('keeps the dialog open after saving when the user declines the timetable view', async () => {
+    vi.stubGlobal('confirm', vi.fn(() => false))
+    const wrapper = await openReview()
+    await wrapper.get('.review-card button').trigger('click')
+    await flushPromises()
+    expect(fixture.timetable[0].offering_id).toBe('offering-1')
+    expect(wrapper.get('.review-card').text()).toContain('อยู่ในตารางแล้ว')
+    expect(wrapper.find('.course-review-modal').exists()).toBe(true)
+    wrapper.unmount()
+  })
+
+  it('shows a save error in the dialog without claiming success', async () => {
+    fixture.writeError = 'save failed'
+    const wrapper = await openReview()
+    await wrapper.get('.review-card button').trigger('click')
+    await flushPromises()
+    expect(wrapper.get('.course-review-body [role="alert"]').text()).toContain('save failed')
+    expect(fixture.timetable).toHaveLength(0)
+    expect(wrapper.find('.course-review-modal').exists()).toBe(true)
+    wrapper.unmount()
+  })
+})
