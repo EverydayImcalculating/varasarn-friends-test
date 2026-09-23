@@ -54,6 +54,21 @@ export class AdminService {
     if (error) throw new Error(error.message)
   }
 
+  async archiveCourse(courseId: string): Promise<void> {
+    const { error } = await this.client.rpc('archive_course', { p_course_id: courseId })
+    if (error) throw new Error(error.message)
+  }
+
+  async updateCourse(courseId: string, course: CourseDraft): Promise<void> {
+    const { error } = await this.client.rpc('update_course', {
+      p_course_id: courseId,
+      p_code: course.code.toUpperCase().replace(/\s+/g, ''),
+      p_name_th: course.nameTh.trim(),
+      p_category_id: course.categoryId,
+    })
+    if (error) throw new Error(error.message)
+  }
+
   private async changeRole(name: string, userId: string): Promise<void> {
     const { error } = await this.client.rpc(name, { p_user_id: userId })
     if (error) throw new Error(error.message)

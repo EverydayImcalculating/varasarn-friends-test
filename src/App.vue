@@ -13,6 +13,11 @@ const adminService = computed(() => neon ? new AdminService(neon as any) : null)
 const accessRole = ref<'owner' | 'administrator' | null>(null); const dashboard = ref(false)
 const members = ref<RoleAssignment[]>([]); const verifiedAccounts = ref<VerifiedAccount[]>([])
 const categories = ref<Category[]>([]); const categoryName = ref(''); const courseCode = ref(''); const courseName = ref(''); const courseCategoryId = ref('')
+const searchTerm = ref(''); const categoryFilter = ref('')
+const filteredCourses = computed(() => courses.value.filter((course) => {
+  const search = searchTerm.value.trim().toLowerCase()
+  return (!search || `${course.code} ${course.name_th}`.toLowerCase().includes(search)) && (!categoryFilter.value || course.category_name === categoryFilter.value)
+}))
 async function loadCatalog() {
   if (!neon) { loading.value = false; error.value = 'ตั้งค่า Neon endpoint ใน .env.local ก่อนใช้งาน'; return }
   const { data, error: apiError } = await (neon as any).rpc('list_approved_catalog')
@@ -51,6 +56,7 @@ async function openDashboard() {
 }
 async function addCategory() { if (!adminService.value || !categoryName.value.trim()) return; try { await adminService.value.createCategory(categoryName.value); categoryName.value = ''; await openDashboard() } catch (cause) { error.value = cause instanceof Error ? cause.message : 'ไม่สามารถเพิ่มหมวดหมู่ได้' } }
 async function addCourse() { if (!adminService.value) return; try { await adminService.value.createCourse({ code: courseCode.value, nameTh: courseName.value, categoryId: courseCategoryId.value }); courseCode.value = ''; courseName.value = ''; await Promise.all([openDashboard(), loadCatalog()]) } catch (cause) { error.value = cause instanceof Error ? cause.message : 'ไม่สามารถเพิ่มรายวิชาได้' } }
+async function archiveCourse(courseId: string) { if (!adminService.value) return; try { await adminService.value.archiveCourse(courseId); await Promise.all([openDashboard(), loadCatalog()]) } catch (cause) { error.value = cause instanceof Error ? cause.message : 'ไม่สามารถปิดใช้งานรายวิชาได้' } }
 async function grantAdministrator(userId: string) {
   if (!adminService.value) return
   try { await adminService.value.grantAdministrator(userId); await openDashboard() } catch (cause) { error.value = cause instanceof Error ? cause.message : 'ไม่สามารถกำหนดสิทธิ์ผู้ดูแลได้' }
@@ -72,7 +78,7 @@ async function signOut() {
   verifiedAccounts.value = []
   error.value = ''
 }
-onMounted(async () => { if (!neon) { loading.value = false; return }; const session = await (neon.auth as any).getSession(); signedIn.value = Boolean(session?.data?.user); if (signedIn.value) { await Promise.all([loadCatalog(), loadAccess()]) } else loading.value = false })
+onMounted(async () => { if (!neon) { loading.value = false; return }; const session = await (neon.auth as any).getSession(); signedIn.value = Boolean(session?.data?.user); if (signedIn.value) { await Promise.all([loadCatalog(), loadAccess(), adminService.value?.listCategories().then((items) => { categories.value = items })]) } else loading.value = false })
 </script>
 
 <template>
