@@ -9,6 +9,7 @@ export type MergePreview = { source_code: string; target_code: string; offerings
 export type AcademicPeriod = { id: string; academic_year: number; semester: string }
 export type OfferingDraft = { courseId: string; academicYear: number; semester: string; section: string; instructorName: string; day: number; startsAt: string; endsAt: string }
 export type PendingProposal = { id: string; course_code: string; academic_year: number; semester: string; section: string; instructor_name: string | null }
+export type ModerationReview = { id: string; rating: number; text: string; author_active: boolean; moderation_state: 'visible' | 'hidden' | 'removed'; created_at: string }
 
 export class AdminService {
   constructor(private readonly client: RpcClient) {}
@@ -103,6 +104,8 @@ export class AdminService {
   async createOffering(draft: OfferingDraft): Promise<void> { const { error } = await this.client.rpc('create_offering', { p_course_id: draft.courseId, p_academic_year: draft.academicYear, p_semester: draft.semester.trim(), p_section: draft.section.trim(), p_instructor_name: draft.instructorName.trim(), p_day: draft.day, p_starts: draft.startsAt, p_ends: draft.endsAt }); if (error) throw new Error(error.message) }
   async listPendingOfferingProposals(): Promise<PendingProposal[]> { const { data, error } = await this.client.rpc('list_pending_offering_proposals'); if (error) throw new Error(error.message); return (data ?? []) as PendingProposal[] }
   async resolveOfferingProposal(id: string, approve: boolean): Promise<void> { const { error } = await this.client.rpc('resolve_offering_proposal', { p_proposal_id: id, p_approve: approve }); if (error) throw new Error(error.message) }
+  async listModerationReviews(state?: ModerationReview['moderation_state']): Promise<ModerationReview[]> { const { data, error } = await this.client.rpc('list_moderation_reviews', { p_state: state ?? null }); if (error) throw new Error(error.message); return (data ?? []) as ModerationReview[] }
+  async moderateReview(id: string, state: ModerationReview['moderation_state'], reason: string): Promise<void> { if (!reason.trim()) throw new Error('กรุณาระบุเหตุผล'); const { error } = await this.client.rpc('moderate_review', { p_review_id: id, p_state: state, p_reason: reason.trim() }); if (error) throw new Error(error.message) }
 
   private async changeRole(name: string, userId: string): Promise<void> {
     const { error } = await this.client.rpc(name, { p_user_id: userId })

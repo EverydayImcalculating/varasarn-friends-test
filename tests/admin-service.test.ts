@@ -62,4 +62,16 @@ describe('AdminService', () => {
     await service.mergeCourse('source', 'target')
     expect(calls).toEqual(['preview_course_merge', 'merge_course'])
   })
+
+  it('uses only moderation-state RPCs and requires a reason', async () => {
+    const calls: Array<{ name: string; args?: Record<string, unknown> }> = []
+    const service = new AdminService({ rpc: async (name, args) => { calls.push({ name, args }); return { data: name === 'list_moderation_reviews' ? [{ id: 'review-1', rating: 1, text: 'x', author_active: true, moderation_state: 'visible', created_at: '2026-01-01' }] : null, error: null } } })
+    await expect(service.listModerationReviews('visible')).resolves.toHaveLength(1)
+    await expect(service.moderateReview('review-1', 'hidden', '  ')).rejects.toThrow('กรุณาระบุเหตุผล')
+    await service.moderateReview('review-1', 'hidden', 'ไม่เกี่ยวข้อง')
+    expect(calls).toEqual([
+      { name: 'list_moderation_reviews', args: { p_state: 'visible' } },
+      { name: 'moderate_review', args: { p_review_id: 'review-1', p_state: 'hidden', p_reason: 'ไม่เกี่ยวข้อง' } },
+    ])
+  })
 })
