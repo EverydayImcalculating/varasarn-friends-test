@@ -218,6 +218,13 @@
       "when": 1790170962814,
       "tag": "0030_fix_replace_timetable_offering_validation",
       "breakpoints": true
+    },
+    {
+      "idx": 31,
+      "version": "7",
+      "when": 1790171945291,
+      "tag": "0031_legacy_review_import_fixes",
+      "breakpoints": true
     }
   ]
 }
