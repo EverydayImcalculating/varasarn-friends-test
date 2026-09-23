@@ -31,3 +31,9 @@ Verified on an isolated branch (`test-review-lifecycle-20260923`, `br-noisy-reci
 `npm test -- --run` passed 27 tests, `npm run build` passed, and `git diff --check` passed. Checked off every checklist item.
 
 **Not yet done:** migration `0027_list_my_review_revisions.sql` has not been applied to production. Live acceptance — an author actually opening My Reviews, editing, withdrawing, republishing, and viewing their history in a browser, plus another signed-in account being unable to touch it — needs a real Google session, the same recurring blocker as Tickets 01, 06, 07, 08, and 09. Status stays `needs-info`.
+
+### 2026-09-23 — Migration 0027 applied to production; grants confirmed live
+
+With owner approval, ran `npm run db:migrate` (applied migrations 0027 and 0028 together) and `neon data-api refresh-schema --project-id soft-surf-84712820 --branch production`. A read-only check confirms `api.list_my_review_revisions` exists in production and that `list_my_review_revisions`, `update_my_review`, and `set_my_review_active` are all granted only to `authenticated` (not `PUBLIC`). Rebuilt commit `ec88af3` locally and confirmed the deployed test app (`https://varasarn-friends-test-tau.vercel.app/`) serves the identical asset hashes. `npm test -- --run` passed 28 tests and `npm run build` passed on this commit.
+
+Live browser acceptance (an author viewing their own edit history, another account unable to) still needs a real Google session. Status stays `needs-info`.

@@ -44,3 +44,9 @@ Verified with [scripts/verify-review-moderation.mjs](../../../scripts/verify-rev
 Ticket 10's `scripts/verify-review-lifecycle.mjs` also re-passed on this branch, now with `0027` applied by the migration runner instead of by hand. `npm test -- --run` passed 28 tests, `npm run build` passed, and `git diff --check` passed. All checklist items are checked off.
 
 **Not yet done:** `0027` and `0028` are not applied to production, so production still has the broken moderation list. A live administrator pass in a browser also still needs a signed-in Google session (same blocker as Tickets 01 and 06–10). Status stays `needs-info`.
+
+### 2026-09-23 — Migrations 0027/0028 applied to production; moderation list fix confirmed live
+
+With owner approval, ran `npm run db:migrate` (applied 29 migrations total, up from 27) and `neon data-api refresh-schema --project-id soft-surf-84712820 --branch production`. A read-only check confirms `api.list_review_moderation_audit` now exists in production, and — most importantly — `api.list_moderation_reviews` now runs successfully (previously it failed on every call in production with `column reference "id" is ambiguous`). Confirmed all three moderation functions (`list_moderation_reviews`, `moderate_review`, `list_review_moderation_audit`) are granted only to `authenticated`, not `PUBLIC`. Rebuilt commit `ec88af3` locally and confirmed the deployed test app serves the identical asset hashes. `npm test -- --run` passed 28 tests and `npm run build` passed.
+
+The moderation dashboard is now functional in production for the first time. Live browser acceptance (an administrator actually using the search/filter/moderate/audit-history flow, and a non-administrator being denied) still needs a real Google session, same blocker as the other tickets. Status stays `needs-info`.
