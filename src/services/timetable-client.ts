@@ -10,6 +10,7 @@ export type TimetableEntry = {
   day_of_week: number
   starts_at: string
   ends_at: string
+  instructor_name: string | null
 }
 
 export class TimetableService {

@@ -6,8 +6,8 @@ const fixture = vi.hoisted(() => ({
   offerings: [{ id: 'offering-1', section: '320001', academic_year: 2568, semester: '1', instructor_name: 'อ. อ้อม' }],
   reviews: [{ id: 'review-1', rating: 5, text: 'สนุกมาก', created_at: '2026-09-23T10:00:00Z', section: '320001', semester: '1', academic_year: 2568, instructor_name: 'อ. อ้อม', day_of_week: 4, starts_at: '09:30:00', ends_at: '12:30:00' }],
   meetings: [{ day_of_week: 4, starts_at: '09:30:00', ends_at: '12:30:00' }],
-  timetable: [] as Array<{ offering_id: string; course_code: string; course_name: string; section: string; day_of_week: number; starts_at: string; ends_at: string }>,
-  reported: [] as Array<{ review_id: string; course_code: string; course_name: string; section: string; day_of_week: number; starts_at: string; ends_at: string }>,
+  timetable: [] as Array<{ offering_id: string; course_code: string; course_name: string; section: string; day_of_week: number; starts_at: string; ends_at: string; instructor_name: string | null }>,
+  reported: [] as Array<{ review_id: string; course_code: string; course_name: string; section: string; day_of_week: number; starts_at: string; ends_at: string; instructor_name: string | null }>,
   writeError: null as string | null,
   calls: [] as Array<{ name: string; args?: Record<string, unknown> }>,
 }))
@@ -26,7 +26,7 @@ vi.mock('../src/neon', () => ({
       if (name === 'add_my_timetable_review') {
         if (fixture.writeError) return { data: null, error: { message: fixture.writeError } }
         fixture.timetable = fixture.timetable.filter((entry) => entry.course_code !== 'JC232')
-        fixture.reported = [{ review_id: String(args?.p_review_id), course_code: 'JC232', course_name: 'เทคนิคการถ่ายทำ', section: '320001', day_of_week: 4, starts_at: '09:30:00', ends_at: '12:30:00' }]
+        fixture.reported = [{ review_id: String(args?.p_review_id), course_code: 'JC232', course_name: 'เทคนิคการถ่ายทำ', section: '320001', day_of_week: 4, starts_at: '09:30:00', ends_at: '12:30:00', instructor_name: 'อ. อ้อม' }]
         return { data: null, error: null }
       }
       if (name === 'remove_my_timetable_review') {
@@ -35,7 +35,7 @@ vi.mock('../src/neon', () => ({
       }
       if (name === 'add_my_timetable_offering' || name === 'replace_my_timetable_offering') {
         if (fixture.writeError) return { data: null, error: { message: fixture.writeError } }
-        fixture.timetable = [...fixture.timetable.filter((entry) => name !== 'replace_my_timetable_offering' || entry.course_code !== 'JC232'), { offering_id: String(args?.p_offering_id), course_code: 'JC232', course_name: 'เทคนิคการถ่ายทำ', section: '320001', day_of_week: 4, starts_at: '09:30:00', ends_at: '12:30:00' }]
+        fixture.timetable = [...fixture.timetable.filter((entry) => name !== 'replace_my_timetable_offering' || entry.course_code !== 'JC232'), { offering_id: String(args?.p_offering_id), course_code: 'JC232', course_name: 'เทคนิคการถ่ายทำ', section: '320001', day_of_week: 4, starts_at: '09:30:00', ends_at: '12:30:00', instructor_name: 'อ. อ้อม' }]
         return { data: null, error: null }
       }
       if (name === 'list_categories') return { data: [], error: null }
@@ -78,7 +78,9 @@ describe('review to personal timetable', () => {
     expect(wrapper.get('.confirm-message').text()).toContain('ตารางเรียน')
     await wrapper.get('.confirm-accept').trigger('click')
     await flushPromises()
-    expect(wrapper.get('.timetable-course').text()).toContain('JC232 (320001)')
+    const block = wrapper.get('.timetable-course')
+    expect(block.text()).toContain('JC232 (320001)')
+    expect(block.text()).toContain('อ. อ้อม')
     wrapper.unmount()
   })
 
@@ -95,18 +97,22 @@ describe('review to personal timetable', () => {
     expect(fixture.calls).toContainEqual({ name: 'add_my_timetable_review', args: { p_review_id: 'review-1' } })
     await wrapper.get('.confirm-accept').trigger('click')
     await flushPromises()
-    expect(wrapper.get('.timetable-course').text()).toContain('JC232 (320001)')
+    const block = wrapper.get('.timetable-course')
+    expect(block.text()).toContain('JC232 (320001)')
+    expect(block.text()).toContain('อ. อ้อม')
     wrapper.unmount()
   })
 
   it('can remove a private review schedule from the timetable', async () => {
     fixture.offerings = []
-    fixture.reported = [{ review_id: 'review-1', course_code: 'JC232', course_name: 'เทคนิคการถ่ายทำ', section: '320001', day_of_week: 4, starts_at: '09:30:00', ends_at: '12:30:00' }]
+    fixture.reported = [{ review_id: 'review-1', course_code: 'JC232', course_name: 'เทคนิคการถ่ายทำ', section: '320001', day_of_week: 4, starts_at: '09:30:00', ends_at: '12:30:00', instructor_name: 'อ. อ้อม' }]
     const wrapper = await openReview()
     expect(wrapper.get('.review-card').text()).toContain('อยู่ในตารางแล้ว')
     await wrapper.get('nav .btn-light').trigger('click')
     await flushPromises()
-    expect(wrapper.get('.timetable-course').text()).toContain('ข้อมูลจากรีวิว')
+    expect(wrapper.get('.timetable-course').text()).toContain('อ. อ้อม')
+    expect(wrapper.get('.timetable-course').text()).not.toContain('ข้อมูลจากรีวิว')
+    expect(wrapper.get('.review-box').text()).toContain('ข้อมูลจากรีวิว')
     await wrapper.get('.review-box button.btn-outline-danger').trigger('click')
     await flushPromises()
     expect(fixture.calls).toContainEqual({ name: 'remove_my_timetable_review', args: { p_review_id: 'review-1' } })
@@ -152,7 +158,7 @@ describe('review to personal timetable', () => {
   })
 
   it('shows the selected state instead of adding the same class twice', async () => {
-    fixture.timetable = [{ offering_id: 'offering-1', course_code: 'JC232', course_name: 'เทคนิคการถ่ายทำ', section: '320001', day_of_week: 4, starts_at: '09:30:00', ends_at: '12:30:00' }]
+    fixture.timetable = [{ offering_id: 'offering-1', course_code: 'JC232', course_name: 'เทคนิคการถ่ายทำ', section: '320001', day_of_week: 4, starts_at: '09:30:00', ends_at: '12:30:00', instructor_name: null }]
     const wrapper = await openReview()
     expect(wrapper.get('.review-card').text()).toContain('อยู่ในตารางแล้ว')
     expect(wrapper.find('.review-card button').exists()).toBe(false)
@@ -194,7 +200,7 @@ describe('review to personal timetable', () => {
   })
 
   it('asks before replacing an existing section and leaves it alone when canceled', async () => {
-    fixture.timetable = [{ offering_id: 'old-offering', course_code: 'JC232', course_name: 'เทคนิคการถ่ายทำ', section: '320002', day_of_week: 4, starts_at: '13:00:00', ends_at: '15:00:00' }]
+    fixture.timetable = [{ offering_id: 'old-offering', course_code: 'JC232', course_name: 'เทคนิคการถ่ายทำ', section: '320002', day_of_week: 4, starts_at: '13:00:00', ends_at: '15:00:00', instructor_name: null }]
     const wrapper = await openReview()
     await wrapper.get('.review-card button').trigger('click')
     await flushPromises()
@@ -207,7 +213,7 @@ describe('review to personal timetable', () => {
   })
 
   it('replaces the selected section after confirmation', async () => {
-    fixture.timetable = [{ offering_id: 'old-offering', course_code: 'JC232', course_name: 'เทคนิคการถ่ายทำ', section: '320002', day_of_week: 4, starts_at: '13:00:00', ends_at: '15:00:00' }]
+    fixture.timetable = [{ offering_id: 'old-offering', course_code: 'JC232', course_name: 'เทคนิคการถ่ายทำ', section: '320002', day_of_week: 4, starts_at: '13:00:00', ends_at: '15:00:00', instructor_name: null }]
     const wrapper = await openReview()
     await wrapper.get('.review-card button').trigger('click')
     await flushPromises()
@@ -219,7 +225,7 @@ describe('review to personal timetable', () => {
   })
 
   it('warns about another course that overlaps and saves only after confirmation', async () => {
-    fixture.timetable = [{ offering_id: 'other-offering', course_code: 'AP164', course_name: 'เศรษฐศาสตร์', section: '1', day_of_week: 4, starts_at: '10:00:00', ends_at: '11:00:00' }]
+    fixture.timetable = [{ offering_id: 'other-offering', course_code: 'AP164', course_name: 'เศรษฐศาสตร์', section: '1', day_of_week: 4, starts_at: '10:00:00', ends_at: '11:00:00', instructor_name: null }]
     const wrapper = await openReview()
     await wrapper.get('.review-card button').trigger('click')
     await flushPromises()

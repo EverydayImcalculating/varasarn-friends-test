@@ -232,6 +232,13 @@
       "when": 1790179631145,
       "tag": "0032_review_backed_timetable",
       "breakpoints": true
+    },
+    {
+      "idx": 33,
+      "version": "7",
+      "when": 1790180000000,
+      "tag": "0033_official_timetable_instructor_name",
+      "breakpoints": true
     }
   ]
 }
