@@ -140,6 +140,8 @@ h1, h2, h3, h4, h5, h6 { font-family: 'Kanit', sans-serif; }
 .review-schedule { padding: 12px; border: 1px dashed var(--purple-300); border-radius: var(--radius-md); background: var(--white); }
 .review-schedule-top { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px; margin-bottom: 8px; }
 .review-schedule .btn-success { white-space: nowrap; font-weight: 600; }
+.review-schedule .badge.bg-purple { background: var(--purple-700); color: var(--white); }
+.schedule-line i { color: var(--purple-600); }
 .review-empty { padding: 1rem; border-radius: var(--radius-md); background: var(--white); color: var(--ink-600); }
 .timetable-container { overflow-x: auto; background: var(--white); border: 1px solid var(--line); border-radius: var(--radius-lg); padding: 20px; box-shadow: var(--shadow-card); }
 .timetable-grid { min-width: 900px; position: relative; }
