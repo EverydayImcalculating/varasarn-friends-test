@@ -92,6 +92,13 @@
       "when": 1790139400000,
       "tag": "0012_review_moderation",
       "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "7",
+      "when": 1790139600000,
+      "tag": "0013_timetable",
+      "breakpoints": true
     }
   ]
 }
