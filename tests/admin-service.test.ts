@@ -43,4 +43,15 @@ describe('AdminService', () => {
     await service.createCategory(' วิชาเลือก ')
     expect(calls).toEqual([{ name: 'list_categories', args: undefined }, { name: 'create_category', args: { p_name: 'วิชาเลือก' } }])
   })
+
+  it('uses the protected course update and archive RPCs', async () => {
+    const calls: Array<{ name: string; args?: Record<string, unknown> }> = []
+    const service = new AdminService({ rpc: async (name, args) => { calls.push({ name, args }); return { data: null, error: null } } })
+    await service.updateCourse('course-1', { code: ' jc 202 ', nameTh: 'ข่าวเชิงลึก', categoryId: 'category-2' })
+    await service.archiveCourse('course-1')
+    expect(calls).toEqual([
+      { name: 'update_course', args: { p_course_id: 'course-1', p_code: 'JC202', p_name_th: 'ข่าวเชิงลึก', p_category_id: 'category-2' } },
+      { name: 'archive_course', args: { p_course_id: 'course-1' } },
+    ])
+  })
 })

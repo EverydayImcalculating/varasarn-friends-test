@@ -24,3 +24,7 @@ The Vue dashboard is visible only after the database reports an owner or adminis
 ### 2026-09-23 — Initial owner bootstrapped
 
 The earliest verified Google account on the linked production branch was assigned the sole `owner` role through the database-owner bootstrap transaction. The membership and `bootstrap_owner` audit entry were verified. The ticket no longer needs external identity information; remaining work is deployed owner/dashboard and cross-account acceptance.
+
+### 2026-09-23 — Owner role-management controls added
+
+The dashboard now renders the owner-only membership list and verified-account list, with explicit appoint and revoke controls. Administrators do not receive this panel. Each action calls the existing owner-checked Data API RPC rather than trusting browser state. Service tests cover the role RPC selection; deployed two-account acceptance remains to be recorded.
