@@ -38,3 +38,7 @@ Neon currently lists only the shared Google OAuth provider. Its shared credentia
 ### 2026-09-23 — Test deployment connected
 
 The separate Vercel test project is deployed and its public endpoint variables, Neon Auth trusted domains, and Data API CORS origins are configured. The deployed app was manually confirmed working after Google authentication. The remaining evidence is a recorded two-account review/permission check and observed copied-token lifetime after sign-out.
+
+### 2026-09-23 — Public deployment verification blocked by Vercel SSO
+
+An unauthenticated request to the stable test deployment alias redirects to Vercel SSO rather than returning the Vite application shell. Public Google sign-in and browser acceptance cannot be reverified until the deployment’s Vercel protection is disabled for the intended test audience or an authorized reviewer session is used. This does not change Neon Auth or Data API configuration.
