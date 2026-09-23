@@ -17,6 +17,12 @@ const offeringMeetings = ref<Record<string, Meeting[]>>({})
 const selected = ref<Course | null>(null); const rating = ref(5); const text = ref(''); const error = ref(''); const loading = ref(true); const signedIn = ref(false); const publishing = ref(false)
 const reviewFormOpen = ref(false)
 watch(selected, (value) => { document.body.style.overflow = value ? 'hidden' : '' })
+type ConfirmVariant = 'warning' | 'success'
+const confirmDialog = ref<{ message: string; confirmLabel: string; cancelLabel: string; variant: ConfirmVariant; resolve: (value: boolean) => void } | null>(null)
+function showConfirm(message: string, confirmLabel: string, cancelLabel: string, variant: ConfirmVariant): Promise<boolean> {
+  return new Promise((resolve) => { confirmDialog.value = { message, confirmLabel, cancelLabel, variant, resolve } })
+}
+function resolveConfirm(value: boolean) { confirmDialog.value?.resolve(value); confirmDialog.value = null }
 const reviewSemester = ref(''); const reviewYear = ref(0); const reviewTeacher = ref(''); const reviewSection = ref(''); const reviewDay = ref('จันทร์'); const reviewStart = ref(''); const reviewEnd = ref('')
 const service = computed(() => neon ? new ReviewService(neon as any) : null)
 const adminService = computed(() => neon ? new AdminService(neon as any) : null)
@@ -106,10 +112,10 @@ async function addReviewToTimetable(review: VisibleReview) {
       { day: entry.day_of_week, start: timeValue(entry.starts_at), end: timeValue(entry.ends_at) }))
     const messages = [currentCourse.length ? `มี ${selected.value.code} อยู่แล้ว ระบบจะเปลี่ยนเป็นกลุ่ม ${review.section}` : '',
       conflicts.length ? `เวลาเรียนชนกับ ${[...new Set(conflicts.map((entry) => entry.course_code))].join(', ')}` : ''].filter(Boolean)
-    if (messages.length && !window.confirm(`${messages.join('\n')}\nต้องการดำเนินการต่อหรือไม่?`)) return
+    if (messages.length && !(await showConfirm(messages.join('\n'), 'ดำเนินการต่อ', 'ยกเลิก', 'warning'))) return
     await timetableService.value.addReview(review.id)
     await loadTimetable()
-    if (!window.confirm(`✅ เพิ่ม ${selected.value.code} ลงตารางเรียนแล้ว!\nต้องการไปดูหน้าตารางเรียนของคุณตอนนี้เลยไหม?`)) return
+    if (!(await showConfirm(`เพิ่ม ${selected.value.code} ลงตารางเรียนแล้ว! ต้องการไปดูหน้าตารางเรียนของคุณตอนนี้เลยไหม?`, 'ไปที่ตารางเรียน', 'ปิด', 'success'))) return
     timetable.value = true; selected.value = null
   } catch (cause) { error.value = cause instanceof Error ? cause.message : 'ไม่สามารถเพิ่มลงตารางเรียนได้' }
 }
@@ -144,10 +150,10 @@ async function addToTimetable(offering: Offering, review?: VisibleReview) {
     const currentCourse = timetableEntries.value.filter((entry) => entry.course_code === selected.value!.code)
     const conflicts = timetableEntries.value.filter((entry) => entry.course_code !== selected.value!.code && meetings.some((meeting) => overlaps({ day: meeting.day_of_week, start: timeValue(meeting.starts_at), end: timeValue(meeting.ends_at) }, { day: entry.day_of_week, start: timeValue(entry.starts_at), end: timeValue(entry.ends_at) })))
     const messages = [currentCourse.length ? `มี ${selected.value.code} อยู่แล้ว ระบบจะเปลี่ยนเป็นกลุ่ม ${offering.section}` : '', conflicts.length ? `เวลาเรียนชนกับ ${[...new Set(conflicts.map((entry) => entry.course_code))].join(', ')}` : ''].filter(Boolean)
-    if (messages.length && !window.confirm(`${messages.join('\n')}\nต้องการดำเนินการต่อหรือไม่?`)) return
+    if (messages.length && !(await showConfirm(messages.join('\n'), 'ดำเนินการต่อ', 'ยกเลิก', 'warning'))) return
     if (currentCourse.length) await timetableService.value.replace(offering.id); else await timetableService.value.add(offering.id)
     await loadTimetable()
-    if (review && !window.confirm(`✅ เพิ่ม ${selected.value.code} ลงตารางเรียนแล้ว!\nต้องการไปดูหน้าตารางเรียนของคุณตอนนี้เลยไหม?`)) return
+    if (review && !(await showConfirm(`เพิ่ม ${selected.value.code} ลงตารางเรียนแล้ว! ต้องการไปดูหน้าตารางเรียนของคุณตอนนี้เลยไหม?`, 'ไปที่ตารางเรียน', 'ปิด', 'success'))) return
     timetable.value = true; selected.value = null
   } catch (cause) { error.value = cause instanceof Error ? cause.message : 'ไม่สามารถเพิ่มลงตารางเรียนได้' }
 }
@@ -308,5 +314,6 @@ onMounted(async () => {
     </section>
     <button v-if="signedIn" class="btn btn-purple floating-contact-btn" :aria-expanded="contactOpen" @click="contactOpen = !contactOpen"><i class="bi bi-chat-heart-fill fs-5"></i><span class="d-none d-md-inline ms-1">แจ้งปัญหา/ติดต่อ</span></button>
     <div v-if="signedIn && contactOpen" class="contact-panel" role="dialog" aria-modal="true" aria-label="ติดต่อผู้ดูแล"><div class="contact-modal-card"><div class="contact-modal-header"><h5 class="modal-title text-purple mb-0"><i class="bi bi-headset me-2"></i>ติดต่อผู้ดูแล</h5><button class="btn-close" aria-label="ปิด" @click="contactOpen = false"></button></div><div class="contact-modal-body"><a href="https://line.me/R/ti/p/@293shldn" target="_blank" rel="noopener noreferrer" class="btn contact-line text-white fw-bold w-100 mb-3"><i class="bi bi-line fs-5 me-2"></i>ติดต่อทาง LINE</a><a href="https://www.instagram.com/varasarn_official" target="_blank" rel="noopener noreferrer" class="btn contact-instagram text-white fw-bold w-100"><i class="bi bi-instagram fs-5 me-2"></i>ทักแชททาง IG</a></div></div></div>
+    <div v-if="confirmDialog" class="confirm-overlay" role="alertdialog" aria-modal="true" @click.self="resolveConfirm(false)"><div class="confirm-card"><i class="bi confirm-icon" :class="confirmDialog.variant === 'success' ? 'bi-check-circle-fill text-success' : 'bi-exclamation-triangle-fill text-warning'"></i><p class="confirm-message">{{ confirmDialog.message }}</p><div class="confirm-actions"><button class="btn btn-outline-secondary confirm-cancel" @click="resolveConfirm(false)">{{ confirmDialog.cancelLabel }}</button><button class="btn btn-purple confirm-accept" @click="resolveConfirm(true)">{{ confirmDialog.confirmLabel }}</button></div></div></div>
   </main>
 </template>

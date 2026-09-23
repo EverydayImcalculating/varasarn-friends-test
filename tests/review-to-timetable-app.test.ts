@@ -65,7 +65,6 @@ describe('review to personal timetable', () => {
     fixture.reported = []
     fixture.writeError = null
     fixture.calls.length = 0
-    vi.stubGlobal('confirm', vi.fn(() => true))
   })
 
   it('adds the approved offering from the review and offers to show the timetable', async () => {
@@ -76,7 +75,9 @@ describe('review to personal timetable', () => {
     await review.get('button').trigger('click')
     await flushPromises()
     expect(fixture.calls).toContainEqual({ name: 'add_my_timetable_offering', args: { p_offering_id: 'offering-1' } })
-    expect(window.confirm).toHaveBeenCalledWith(expect.stringContaining('ตารางเรียน'))
+    expect(wrapper.get('.confirm-message').text()).toContain('ตารางเรียน')
+    await wrapper.get('.confirm-accept').trigger('click')
+    await flushPromises()
     expect(wrapper.get('.timetable-course').text()).toContain('JC232 (320001)')
     wrapper.unmount()
   })
@@ -92,6 +93,8 @@ describe('review to personal timetable', () => {
     await review.get('button').trigger('click')
     await flushPromises()
     expect(fixture.calls).toContainEqual({ name: 'add_my_timetable_review', args: { p_review_id: 'review-1' } })
+    await wrapper.get('.confirm-accept').trigger('click')
+    await flushPromises()
     expect(wrapper.get('.timetable-course').text()).toContain('JC232 (320001)')
     wrapper.unmount()
   })
@@ -192,11 +195,12 @@ describe('review to personal timetable', () => {
 
   it('asks before replacing an existing section and leaves it alone when canceled', async () => {
     fixture.timetable = [{ offering_id: 'old-offering', course_code: 'JC232', course_name: 'เทคนิคการถ่ายทำ', section: '320002', day_of_week: 4, starts_at: '13:00:00', ends_at: '15:00:00' }]
-    vi.stubGlobal('confirm', vi.fn(() => false))
     const wrapper = await openReview()
     await wrapper.get('.review-card button').trigger('click')
     await flushPromises()
-    expect(window.confirm).toHaveBeenCalledWith(expect.stringContaining('เปลี่ยนเป็นกลุ่ม 320001'))
+    expect(wrapper.get('.confirm-message').text()).toContain('เปลี่ยนเป็นกลุ่ม 320001')
+    await wrapper.get('.confirm-cancel').trigger('click')
+    await flushPromises()
     expect(fixture.calls.some(({ name }) => name === 'replace_my_timetable_offering')).toBe(false)
     expect(fixture.timetable[0].section).toBe('320002')
     wrapper.unmount()
@@ -207,6 +211,8 @@ describe('review to personal timetable', () => {
     const wrapper = await openReview()
     await wrapper.get('.review-card button').trigger('click')
     await flushPromises()
+    await wrapper.get('.confirm-accept').trigger('click')
+    await flushPromises()
     expect(fixture.calls).toContainEqual({ name: 'replace_my_timetable_offering', args: { p_offering_id: 'offering-1' } })
     expect(fixture.timetable.map((entry) => entry.section)).toEqual(['320001'])
     wrapper.unmount()
@@ -214,19 +220,21 @@ describe('review to personal timetable', () => {
 
   it('warns about another course that overlaps and saves only after confirmation', async () => {
     fixture.timetable = [{ offering_id: 'other-offering', course_code: 'AP164', course_name: 'เศรษฐศาสตร์', section: '1', day_of_week: 4, starts_at: '10:00:00', ends_at: '11:00:00' }]
-    vi.stubGlobal('confirm', vi.fn(() => false))
     const wrapper = await openReview()
     await wrapper.get('.review-card button').trigger('click')
     await flushPromises()
-    expect(window.confirm).toHaveBeenCalledWith(expect.stringContaining('AP164'))
+    expect(wrapper.get('.confirm-message').text()).toContain('AP164')
+    await wrapper.get('.confirm-cancel').trigger('click')
+    await flushPromises()
     expect(fixture.calls.some(({ name }) => name === 'add_my_timetable_offering')).toBe(false)
     wrapper.unmount()
   })
 
   it('keeps the dialog open after saving when the user declines the timetable view', async () => {
-    vi.stubGlobal('confirm', vi.fn(() => false))
     const wrapper = await openReview()
     await wrapper.get('.review-card button').trigger('click')
+    await flushPromises()
+    await wrapper.get('.confirm-cancel').trigger('click')
     await flushPromises()
     expect(fixture.timetable[0].offering_id).toBe('offering-1')
     expect(wrapper.get('.review-card').text()).toContain('อยู่ในตารางแล้ว')
