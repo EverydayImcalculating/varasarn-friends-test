@@ -1377,7 +1377,7 @@ onMounted(async () => {
                   >
                 </div>
               </div>
-              <div class="review-box proposal-box">
+              <div v-if="false" class="review-box proposal-box">
                 <h2>ไม่พบกลุ่มเรียนที่ต้องการ?</h2>
                 <p class="text-muted">
                   เพิ่มข้อมูลกลุ่มเรียนที่ต้องการได้ทันที ข้อมูลนี้แยกจากการเขียนรีวิว
