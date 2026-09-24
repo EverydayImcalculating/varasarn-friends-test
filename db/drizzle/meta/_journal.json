@@ -239,6 +239,13 @@
       "when": 1790180000000,
       "tag": "0033_official_timetable_instructor_name",
       "breakpoints": true
+    },
+    {
+      "idx": 34,
+      "version": "7",
+      "when": 1790251464327,
+      "tag": "0034_auto_approve_offering_proposals",
+      "breakpoints": true
     }
   ]
 }

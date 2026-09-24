@@ -3,11 +3,12 @@ import { flushPromises, mount } from '@vue/test-utils'
 import App from '../src/App.vue'
 
 const fixture = vi.hoisted(() => ({
-  offerings: [{ id: 'offering-1', section: '320001', academic_year: 2568, semester: '1', instructor_name: 'อ. อ้อม' }],
+  offerings: [{ id: 'offering-1', section: '320001', academic_year: 2568, semester: '1', instructor_name: 'อ. อ้อม' as string | null }],
   reviews: [{ id: 'review-1', rating: 5, text: 'สนุกมาก', created_at: '2026-09-23T10:00:00Z', section: '320001', semester: '1', academic_year: 2568, instructor_name: 'อ. อ้อม', day_of_week: 4, starts_at: '09:30:00', ends_at: '12:30:00' }],
   meetings: [{ day_of_week: 4, starts_at: '09:30:00', ends_at: '12:30:00' }],
   timetable: [] as Array<{ offering_id: string; course_code: string; course_name: string; section: string; day_of_week: number; starts_at: string; ends_at: string; instructor_name: string | null }>,
   reported: [] as Array<{ review_id: string; course_code: string; course_name: string; section: string; day_of_week: number; starts_at: string; ends_at: string; instructor_name: string | null }>,
+  proposals: [] as Array<{ id: string; course_id: string; academic_year: number; semester: string; section: string; instructor_name: string | null; status: string; created_at: string }>,
   writeError: null as string | null,
   calls: [] as Array<{ name: string; args?: Record<string, unknown> }>,
 }))
@@ -40,7 +41,13 @@ vi.mock('../src/neon', () => ({
       }
       if (name === 'list_categories') return { data: [], error: null }
       if (name === 'current_access') return { data: [{ role: null }], error: null }
-      if (name === 'list_my_offering_proposals') return { data: [], error: null }
+      if (name === 'list_my_offering_proposals') return { data: fixture.proposals, error: null }
+      if (name === 'create_offering_proposal') {
+        const proposal = { id: 'proposal-1', course_id: 'course-1', academic_year: Number(args?.p_academic_year), semester: String(args?.p_semester), section: String(args?.p_section), instructor_name: (args?.p_instructor_name as string) || null, status: 'approved', created_at: '2026-09-24T00:00:00Z' }
+        fixture.proposals = [...fixture.proposals, proposal]
+        fixture.offerings = [...fixture.offerings, { id: 'offering-2', section: proposal.section, academic_year: proposal.academic_year, semester: proposal.semester, instructor_name: proposal.instructor_name }]
+        return { data: proposal.id, error: null }
+      }
       throw new Error(`Unexpected RPC: ${name}`)
     },
   },
@@ -63,8 +70,26 @@ describe('review to personal timetable', () => {
     fixture.meetings = [{ day_of_week: 4, starts_at: '09:30:00', ends_at: '12:30:00' }]
     fixture.timetable = []
     fixture.reported = []
+    fixture.proposals = []
     fixture.writeError = null
     fixture.calls.length = 0
+  })
+
+  it('adds a new class section instantly, without admin approval', async () => {
+    const wrapper = await openReview()
+    const proposalBox = wrapper.get('.proposal-box')
+    expect(wrapper.findAll('.offering-card')).toHaveLength(1)
+    const inputs = proposalBox.findAll('input')
+    await inputs[0].setValue('2568')
+    await inputs[1].setValue('2')
+    await inputs[2].setValue('02')
+    await inputs[3].setValue('อ.ใหม่')
+    await proposalBox.get('button').trigger('click')
+    await flushPromises()
+    expect(fixture.calls).toContainEqual({ name: 'create_offering_proposal', args: { p_course_id: 'course-1', p_academic_year: 2568, p_semester: '2', p_section: '02', p_instructor_name: 'อ.ใหม่' } })
+    expect(proposalBox.text()).toContain('เพิ่มแล้ว')
+    expect(wrapper.findAll('.offering-card')).toHaveLength(2)
+    wrapper.unmount()
   })
 
   it('adds the approved offering from the review and offers to show the timetable', async () => {
