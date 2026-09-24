@@ -17,7 +17,11 @@ vi.mock('../src/neon', () => ({
       if (name === 'list_approved_catalog') return { data: fixture.catalog, error: null }
       if (name === 'list_categories') return { data: fixture.categories, error: null }
       if (name === 'current_access') return { data: [{ role: fixture.role }], error: null }
-      if (name === 'create_course') return { data: null, error: null }
+      if (name === 'create_course') {
+        const code = String((args as { p_code?: string })?.p_code ?? '')
+        if (fixture.catalog.some((course) => course.code === code)) return { data: null, error: { message: `รหัสวิชา ${code} มีอยู่แล้ว` } }
+        return { data: null, error: null }
+      }
       throw new Error(`Unexpected RPC: ${name}`)
     },
   },
@@ -49,6 +53,23 @@ describe('add-course button on the catalog page', () => {
     await flushPromises()
     expect(fixture.calls).toContainEqual({ name: 'create_course', args: { p_code: 'JC200', p_name_th: 'วิชาใหม่', p_category_id: 'cat-1' } })
     expect(wrapper.find('.course-modal-body').exists()).toBe(false)
+    expect(wrapper.get('.toast-banner').text()).toContain('เพิ่มรายวิชาสำเร็จ')
+    wrapper.unmount()
+  })
+
+  it('shows a friendly error and keeps the modal open for a duplicate course code', async () => {
+    fixture.role = 'administrator'
+    const wrapper = mount(App)
+    await flushPromises()
+    await wrapper.get('.add-course-btn').trigger('click')
+    await flushPromises()
+    await wrapper.get('#new-course-code').setValue('JC100')
+    await wrapper.get('#new-course-name').setValue('วารสารศาสตร์ (ซ้ำ)')
+    await wrapper.get('.course-modal-body button.btn-purple').trigger('click')
+    await flushPromises()
+    expect(wrapper.get('.course-modal-body .alert-danger').text()).toContain('JC100 มีอยู่แล้ว')
+    expect(wrapper.find('.course-modal-body').exists()).toBe(true)
+    expect(wrapper.find('.toast-banner').exists()).toBe(false)
     wrapper.unmount()
   })
 })

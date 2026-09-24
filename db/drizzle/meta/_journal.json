@@ -246,6 +246,13 @@
       "when": 1790251464327,
       "tag": "0034_auto_approve_offering_proposals",
       "breakpoints": true
+    },
+    {
+      "idx": 35,
+      "version": "7",
+      "when": 1790252590589,
+      "tag": "0035_course_duplicate_code_error",
+      "breakpoints": true
     }
   ]
 }
