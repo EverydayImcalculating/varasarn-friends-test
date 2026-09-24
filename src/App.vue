@@ -293,49 +293,1395 @@ onMounted(async () => {
 
 <template>
   <main>
-    <nav v-if="signedIn" class="navbar navbar-custom navbar-dark mb-4"><div class="container d-flex justify-content-between align-items-center"><button class="navbar-brand mb-0 h1 border-0 bg-transparent" @click="timetable = false; dashboard = false; myReviewsScreen = false; selected = null"><i class="bi bi-journal-text me-2"></i>Varasarn Close Friends</button><div class="d-flex align-items-center gap-2"><button class="btn btn-sm btn-light text-purple fw-bold rounded-pill px-3 shadow-sm" @click="openTimetable"><i class="bi bi-grid-3x3-gap-fill me-1"></i>ตารางเรียน<span v-if="legacySource.kind === 'found'" class="badge bg-warning text-dark ms-1">เดิม</span></button><div class="account-menu d-none d-md-block"><button class="btn user-dropdown-btn dropdown-toggle" type="button" :aria-expanded="accountMenuOpen" @click="accountMenuOpen = !accountMenuOpen"><i class="bi bi-person-circle me-1"></i>{{ displayName }}</button><div v-if="accountMenuOpen" class="account-menu-list dropdown-menu-custom"><button class="dropdown-item py-2" @click="accountMenuOpen = false; openMyReviews()"><i class="bi bi-star-fill text-warning me-2"></i>รีวิวของฉัน</button><button v-if="accessRole" class="dropdown-item py-2" @click="accountMenuOpen = false; openDashboard()">แดชบอร์ดผู้ดูแล</button><hr class="dropdown-divider"><button class="dropdown-item py-2 text-danger fw-bold" @click="accountMenuOpen = false; signOut()"><i class="bi bi-box-arrow-right me-2"></i>ออกจากระบบ</button></div></div></div></div></nav>
-    <section v-if="!signedIn" class="sign-in"><div class="login-shell"><div class="login-card"><div class="login-banner"><img src="https://i.postimg.cc/FFk3NRHV/IMG-0677.jpg" alt="Varasarn Close Friends"></div><p class="login-description">พื้นที่รวบรวมรีวิววิชาเรียนและจัดตารางเรียนส่วนตัว<br>ดูแลโดย กน.วส.</p><div class="login-prompt">✨ กรุณาเข้าสู่ระบบด้วยบัญชี Google เพื่อใช้งานระบบ</div><button class="google-signin-btn" @click="enter"><svg class="google-mark" viewBox="0 0 24 24" aria-hidden="true"><path fill="#4285F4" d="M21.35 12.27c0-.72-.06-1.42-.18-2.09H12v3.96h5.24a4.48 4.48 0 0 1-1.94 2.94v2.45h3.14c1.84-1.69 2.91-4.18 2.91-7.26Z"/><path fill="#34A853" d="M12 21.7c2.63 0 4.84-.87 6.45-2.36l-3.14-2.45c-.87.58-1.98.92-3.31.92-2.54 0-4.7-1.72-5.47-4.03H3.28v2.53A9.74 9.74 0 0 0 12 21.7Z"/><path fill="#FBBC05" d="M6.53 13.78A5.86 5.86 0 0 1 6.22 12c0-.62.11-1.22.31-1.78V7.69H3.28A9.73 9.73 0 0 0 2.25 12c0 1.57.38 3.05 1.03 4.31l3.25-2.53Z"/><path fill="#EA4335" d="M12 6.19c1.43 0 2.71.49 3.72 1.45l2.79-2.79C16.84 3.19 14.63 2.3 12 2.3a9.74 9.74 0 0 0-8.72 5.39l3.25 2.53C7.3 7.91 9.46 6.19 12 6.19Z"/></svg><span>เข้าสู่ระบบด้วย Google</span></button><p v-if="error" class="text-danger mt-3 mb-0" role="alert">{{ error }}</p></div></div></section>
+    <nav v-if="signedIn" class="navbar navbar-custom navbar-dark mb-4">
+      <div class="container d-flex justify-content-between align-items-center">
+        <button
+          class="navbar-brand mb-0 h1 border-0 bg-transparent"
+          @click="
+            timetable = false;
+            dashboard = false;
+            myReviewsScreen = false;
+            selected = null;
+          "
+        >
+          <i class="bi bi-journal-text me-2"></i>Varasarn Close Friends
+        </button>
+        <div class="d-flex align-items-center gap-2">
+          <button
+            class="btn btn-sm btn-light text-purple fw-bold rounded-pill px-3 shadow-sm"
+            @click="openTimetable"
+          >
+            <i class="bi bi-grid-3x3-gap-fill me-1"></i>ตารางเรียน<span
+              v-if="legacySource.kind === 'found'"
+              class="badge bg-warning text-dark ms-1"
+              >เดิม</span
+            >
+          </button>
+          <div class="account-menu d-none d-md-block">
+            <button
+              class="btn user-dropdown-btn dropdown-toggle"
+              type="button"
+              :aria-expanded="accountMenuOpen"
+              @click="accountMenuOpen = !accountMenuOpen"
+            >
+              <i class="bi bi-person-circle me-1"></i>{{ displayName }}
+            </button>
+            <div v-if="accountMenuOpen" class="account-menu-list dropdown-menu-custom">
+              <button
+                class="dropdown-item py-2"
+                @click="
+                  accountMenuOpen = false;
+                  openMyReviews();
+                "
+              >
+                <i class="bi bi-star-fill text-warning me-2"></i>รีวิวของฉัน</button
+              ><button
+                v-if="accessRole"
+                class="dropdown-item py-2"
+                @click="
+                  accountMenuOpen = false;
+                  openDashboard();
+                "
+              >
+                แดชบอร์ดผู้ดูแล
+              </button>
+              <hr class="dropdown-divider" />
+              <button
+                class="dropdown-item py-2 text-danger fw-bold"
+                @click="
+                  accountMenuOpen = false;
+                  signOut();
+                "
+              >
+                <i class="bi bi-box-arrow-right me-2"></i>ออกจากระบบ
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </nav>
+    <section v-if="!signedIn" class="sign-in">
+      <div class="login-shell">
+        <div class="login-card">
+          <div class="login-banner">
+            <img
+              src="https://i.postimg.cc/FFk3NRHV/IMG-0677.jpg"
+              alt="Varasarn Close Friends"
+            />
+          </div>
+          <p class="login-description">
+            พื้นที่รวบรวมรีวิววิชาเรียนและจัดตารางเรียนส่วนตัว<br />ดูแลโดย กน.วส.
+          </p>
+          <div class="login-prompt">
+            ✨ กรุณาเข้าสู่ระบบด้วยบัญชี Google เพื่อใช้งานระบบ
+          </div>
+          <button class="google-signin-btn" @click="enter">
+            <svg class="google-mark" viewBox="0 0 24 24" aria-hidden="true">
+              <path
+                fill="#4285F4"
+                d="M21.35 12.27c0-.72-.06-1.42-.18-2.09H12v3.96h5.24a4.48 4.48 0 0 1-1.94 2.94v2.45h3.14c1.84-1.69 2.91-4.18 2.91-7.26Z"
+              />
+              <path
+                fill="#34A853"
+                d="M12 21.7c2.63 0 4.84-.87 6.45-2.36l-3.14-2.45c-.87.58-1.98.92-3.31.92-2.54 0-4.7-1.72-5.47-4.03H3.28v2.53A9.74 9.74 0 0 0 12 21.7Z"
+              />
+              <path
+                fill="#FBBC05"
+                d="M6.53 13.78A5.86 5.86 0 0 1 6.22 12c0-.62.11-1.22.31-1.78V7.69H3.28A9.73 9.73 0 0 0 2.25 12c0 1.57.38 3.05 1.03 4.31l3.25-2.53Z"
+              />
+              <path
+                fill="#EA4335"
+                d="M12 6.19c1.43 0 2.71.49 3.72 1.45l2.79-2.79C16.84 3.19 14.63 2.3 12 2.3a9.74 9.74 0 0 0-8.72 5.39l3.25 2.53C7.3 7.91 9.46 6.19 12 6.19Z"
+              /></svg
+            ><span>เข้าสู่ระบบด้วย Google</span>
+          </button>
+          <p v-if="error" class="text-danger mt-3 mb-0" role="alert">{{ error }}</p>
+        </div>
+      </div>
+    </section>
     <section v-else class="container pb-5">
-      <div v-if="!dashboard && !timetable && !myReviewsScreen" class="mobile-account-menu d-md-none mb-3"><button class="btn user-dropdown-btn dropdown-toggle w-100 text-start d-flex justify-content-between align-items-center" type="button" :aria-expanded="accountMenuOpen" @click="accountMenuOpen = !accountMenuOpen"><span><i class="bi bi-person-circle me-1"></i>{{ displayName }}</span></button><div v-if="accountMenuOpen" class="account-menu-list dropdown-menu-custom w-100"><button class="dropdown-item py-2" @click="accountMenuOpen = false; openMyReviews()"><i class="bi bi-star-fill text-warning me-2"></i>รีวิวของฉัน</button><button v-if="accessRole" class="dropdown-item py-2" @click="accountMenuOpen = false; openDashboard()">แดชบอร์ดผู้ดูแล</button><hr class="dropdown-divider"><button class="dropdown-item py-2 text-danger fw-bold" @click="accountMenuOpen = false; signOut()"><i class="bi bi-box-arrow-right me-2"></i>ออกจากระบบ</button></div></div>
+      <div
+        v-if="!dashboard && !timetable && !myReviewsScreen"
+        class="mobile-account-menu d-md-none mb-3"
+      >
+        <button
+          class="btn user-dropdown-btn dropdown-toggle w-100 text-start d-flex justify-content-between align-items-center"
+          type="button"
+          :aria-expanded="accountMenuOpen"
+          @click="accountMenuOpen = !accountMenuOpen"
+        >
+          <span><i class="bi bi-person-circle me-1"></i>{{ displayName }}</span>
+        </button>
+        <div v-if="accountMenuOpen" class="account-menu-list dropdown-menu-custom w-100">
+          <button
+            class="dropdown-item py-2"
+            @click="
+              accountMenuOpen = false;
+              openMyReviews();
+            "
+          >
+            <i class="bi bi-star-fill text-warning me-2"></i>รีวิวของฉัน</button
+          ><button
+            v-if="accessRole"
+            class="dropdown-item py-2"
+            @click="
+              accountMenuOpen = false;
+              openDashboard();
+            "
+          >
+            แดชบอร์ดผู้ดูแล
+          </button>
+          <hr class="dropdown-divider" />
+          <button
+            class="dropdown-item py-2 text-danger fw-bold"
+            @click="
+              accountMenuOpen = false;
+              signOut();
+            "
+          >
+            <i class="bi bi-box-arrow-right me-2"></i>ออกจากระบบ
+          </button>
+        </div>
+      </div>
       <section v-if="dashboard" class="review-box">
-        <button class="btn btn-link text-purple p-0 mb-3" @click="dashboard = false">← กลับหน้ารายวิชา</button>
-        <h1>แดชบอร์ดผู้ดูแล</h1><p v-if="error" class="text-danger" role="alert">{{ error }}</p>
-        <h2 class="h4 mt-4">เพิ่มหมวดหมู่</h2><div class="input-group mb-3"><input v-model="categoryName" class="form-control" aria-label="ชื่อหมวดหมู่"><button class="btn btn-purple" @click="addCategory">เพิ่ม</button></div><div class="category-menu"><button v-for="category in categories" :key="category.id" class="btn category-btn btn-outline-purple" @click="renameCategory(category)">{{ category.name }} · แก้ไข</button></div>
-        <h2 class="h4">{{ editingCourseId ? 'แก้ไขรายวิชา' : 'เพิ่มรายวิชา' }}</h2><div class="row g-2"><div class="col-md-3"><input v-model="courseCode" class="form-control" placeholder="รหัสวิชา"></div><div class="col-md-4"><input v-model="courseName" class="form-control" placeholder="ชื่อรายวิชา"></div><div class="col-md-3"><select v-model="courseCategoryId" class="form-select"><option v-for="category in categories" :key="category.id" :value="category.id">{{ category.name }}</option></select></div><div class="col-md-2"><button class="btn btn-purple w-100" @click="addCourse">{{ editingCourseId ? 'บันทึก' : 'เพิ่มรายวิชา' }}</button></div></div>
-        <h2 class="h4 mt-4">รายวิชา</h2><ul class="list-group"><li v-for="course in managedCourses" :key="course.id" class="list-group-item d-flex justify-content-between align-items-center"><span><strong>{{ course.code }}</strong> · {{ course.name_th }} <small class="text-muted">{{ course.category_name }} · {{ course.status }}</small></span><span class="d-flex gap-2"><button class="btn btn-sm btn-outline-purple" @click="editCourse(course)">แก้ไข</button><button v-if="course.status === 'approved'" class="btn btn-sm btn-outline-danger" @click="archiveCourse(course.id)">เก็บเข้าคลัง</button></span></li></ul>
-        <h2 class="h4 mt-4">รวมรายวิชาซ้ำ</h2><div class="row g-2"><div class="col-md-5"><select v-model="mergeSourceId" class="form-select"><option value="">รายวิชาต้นทาง</option><option v-for="course in managedCourses.filter((course) => course.status === 'approved')" :key="course.id" :value="course.id">{{ course.code }} · {{ course.name_th }}</option></select></div><div class="col-md-5"><select v-model="mergeTargetId" class="form-select"><option value="">รายวิชาที่เก็บไว้</option><option v-for="course in managedCourses.filter((course) => course.status === 'approved' && course.id !== mergeSourceId)" :key="course.id" :value="course.id">{{ course.code }} · {{ course.name_th }}</option></select></div><div class="col-md-2"><button class="btn btn-outline-purple w-100" @click="previewMerge">ตรวจสอบ</button></div></div><div v-if="mergePreview" class="review-box"><p class="mb-2">ย้าย {{ mergePreview.offerings_to_move }} กลุ่มเรียน และเก็บ {{ mergePreview.reviews_preserved }} รีวิว จาก <strong>{{ mergePreview.source_code }}</strong> ไปยัง <strong>{{ mergePreview.target_code }}</strong></p><button class="btn btn-purple" @click="confirmMerge">ยืนยันการรวม</button></div>
-        <h2 class="h4 mt-4">ภาคการศึกษาและกลุ่มเรียน</h2><div class="row g-2 mb-3"><div class="col-md-4"><input v-model.number="periodYear" class="form-control" type="number" aria-label="ปีการศึกษา"></div><div class="col-md-5"><input v-model="periodSemester" class="form-control" aria-label="ภาคการศึกษา"></div><div class="col-md-3"><button class="btn btn-outline-purple w-100" @click="addPeriod">เพิ่มภาคการศึกษา</button></div></div><p class="text-muted">{{ periods.map((period) => `${period.semester}/${period.academic_year}`).join(' · ') || 'ยังไม่มีภาคการศึกษา' }}</p><div class="row g-2"><div class="col-md-4"><select v-model="offeringCourseId" class="form-select" @change="loadCourseOfferings"><option value="">รายวิชา</option><option v-for="course in managedCourses.filter((course) => course.status === 'approved')" :key="course.id" :value="course.id">{{ course.code }}</option></select></div><div class="col-md-2"><input v-model.number="offeringYear" class="form-control" type="number" aria-label="ปีการศึกษา"></div><div class="col-md-2"><input v-model="offeringSemester" class="form-control" placeholder="ภาค"></div><div class="col-md-2"><input v-model="offeringSection" class="form-control" placeholder="กลุ่ม"></div><div class="col-md-2"><select v-model.number="offeringDay" class="form-select"><option v-for="day in [1,2,3,4,5,6,7]" :key="day" :value="day">{{ dayNames[day] }}</option></select></div><div class="col-md-4"><input v-model="offeringInstructor" class="form-control" placeholder="ผู้สอน"></div><div class="col-md-3"><input v-model="offeringStart" class="form-control" type="time"></div><div class="col-md-3"><input v-model="offeringEnd" class="form-control" type="time"></div><div class="col-md-2"><button class="btn btn-purple w-100" @click="addOffering">{{ editingOfferingId ? 'บันทึกกลุ่มเรียน' : 'เพิ่มกลุ่มเรียน' }}</button></div></div><div v-if="offeringCourseId" class="mt-2"><p v-if="!courseOfferings.length" class="text-muted">ยังไม่มีกลุ่มเรียนสำหรับรายวิชานี้</p><ul v-else class="list-group"><li v-for="offering in courseOfferings" :key="offering.id" class="list-group-item d-flex justify-content-between align-items-center"><span>กลุ่ม {{ offering.section }} · {{ offering.semester }}/{{ offering.academic_year }}<small v-if="offering.instructor_name" class="text-muted"> · {{ offering.instructor_name }}</small></span><button class="btn btn-sm btn-outline-purple" @click="editOffering(offering)">แก้ไข</button></li></ul></div>
-        <h2 class="h4 mt-4">นำเข้ากลุ่มเรียนจำนวนมาก</h2><p class="text-muted mb-2">วางข้อมูลเป็นรายการ JSON ของกลุ่มเรียน เช่น <code>[{"courseCode":"JC100","academicYear":2569,"semester":"1","section":"2","instructorName":"อาจารย์เอ","dayOfWeek":2,"startsAt":"09:00","endsAt":"11:00"}]</code></p><textarea v-model="bulkImportText" class="form-control mb-2" rows="4" aria-label="ข้อมูลนำเข้ากลุ่มเรียน (JSON)" placeholder='[{"courseCode":"JC100","academicYear":2569,"semester":"1","section":"2","instructorName":"อาจารย์เอ","dayOfWeek":2,"startsAt":"09:00","endsAt":"11:00"}]'></textarea><div class="d-flex gap-2 mb-3"><button class="btn btn-outline-purple" :disabled="!bulkImportText.trim()" @click="previewBulkImport">ตรวจสอบ</button><button class="btn btn-purple" :disabled="!bulkImportPreview.length" @click="confirmBulkImport">ยืนยันนำเข้า</button></div><p v-if="bulkImportResult" class="alert alert-success">นำเข้าสำเร็จ: เพิ่มใหม่ {{ bulkImportResult.created_count }} · แก้ไข {{ bulkImportResult.updated_count }} · ไม่เปลี่ยนแปลง {{ bulkImportResult.existing_count }}</p><div v-if="bulkImportPreview.length" class="table-responsive mb-3"><table class="table table-sm align-middle"><thead><tr><th>แถว</th><th>วิชา</th><th>ภาค/ปี</th><th>กลุ่ม</th><th>สถานะ</th><th>หมายเหตุ</th></tr></thead><tbody><tr v-for="row in bulkImportPreview" :key="row.rowNumber"><td>{{ row.rowNumber }}</td><td>{{ row.courseCode }}</td><td>{{ row.semester }}/{{ row.academicYear }}</td><td>{{ row.section }}</td><td><span :class="row.valid ? 'text-success' : 'text-danger'">{{ row.valid ? (row.action === 'create' ? 'เพิ่มใหม่' : row.action === 'update' ? 'แก้ไข' : 'ไม่เปลี่ยนแปลง') : 'ผิดพลาด' }}</span></td><td class="text-muted">{{ row.reason }}</td></tr></tbody></table></div>
-        <h2 class="h4 mt-4">ข้อเสนอกลุ่มเรียน</h2><p v-if="!proposals.length" class="text-muted">ไม่มีข้อเสนอที่รอตรวจสอบ</p><div v-for="proposal in proposals" :key="proposal.id" class="review-box"><div class="d-flex flex-wrap justify-content-between gap-2 align-items-center"><span><strong>{{ proposal.course_code }}</strong> · กลุ่ม {{ proposal.section }} · {{ proposal.semester }}/{{ proposal.academic_year }}<small v-if="proposal.instructor_name" class="d-block text-muted">{{ proposal.instructor_name }}</small></span><span class="d-flex gap-2"><button class="btn btn-sm btn-outline-danger" @click="resolveProposal(proposal.id, false)">ปฏิเสธ</button><button class="btn btn-sm btn-purple" @click="resolveProposal(proposal.id, true)">อนุมัติ</button></span></div></div>
-        <h2 class="h4 mt-4">ตรวจสอบรีวิว</h2><div class="row g-2 mb-3"><div class="col-md-5"><input v-model="moderationSearch" class="form-control" placeholder="ค้นหาข้อความรีวิว" aria-label="ค้นหาข้อความรีวิว"></div><div class="col-md-4"><select v-model="moderationState" class="form-select" aria-label="สถานะรีวิว"><option value="all">ทุกสถานะ</option><option value="visible">เผยแพร่</option><option value="hidden">ซ่อน</option><option value="removed">นำออก</option></select></div><div class="col-md-3"><button class="btn btn-outline-purple w-100" @click="loadModerationReviews">ค้นหา</button></div></div><p v-if="!visibleModerationReviews.length" class="text-muted">ไม่พบรีวิว</p><article v-for="review in visibleModerationReviews" :key="review.id" class="review-box"><div class="d-flex justify-content-between gap-2"><span class="stars">{{ '★'.repeat(review.rating) }}</span><small>{{ moderationStateLabel(review.moderation_state) }}<span v-if="!review.author_active"> · ผู้เขียนถอนการเผยแพร่</span></small></div><p class="mb-2">{{ review.text }}</p><input v-model="moderationReasons[review.id]" class="form-control mb-2" placeholder="เหตุผลสำหรับการเปลี่ยนสถานะ" :aria-label="`เหตุผลสำหรับรีวิว ${review.id}`"><div class="d-flex flex-wrap gap-2"><button v-if="review.moderation_state !== 'visible'" class="btn btn-sm btn-outline-purple" @click="moderateReview(review.id, 'visible')">คืนสถานะ</button><button v-if="review.moderation_state !== 'hidden'" class="btn btn-sm btn-outline-danger" @click="moderateReview(review.id, 'hidden')">ซ่อน</button><button v-if="review.moderation_state !== 'removed'" class="btn btn-sm btn-outline-danger" @click="moderateReview(review.id, 'removed')">นำออก</button><button class="btn btn-sm btn-outline-secondary" @click="toggleModerationAudit(review.id)"><i class="bi bi-clock-history me-1"></i>{{ moderationAuditId === review.id ? 'ซ่อนประวัติ' : 'ประวัติการตรวจสอบ' }}</button></div><div v-if="moderationAuditId === review.id" class="mt-3 border-top pt-3"><p v-if="!moderationAudit.length" class="text-muted mb-0">ยังไม่เคยมีการเปลี่ยนสถานะ</p><div v-for="entry in moderationAudit" :key="entry.id" class="mb-2"><small class="text-muted d-block">{{ entry.createdAt }} · {{ entry.actorName }}</small><span>{{ moderationStateLabel(entry.priorState) }} → {{ moderationStateLabel(entry.newState) }}</span><p class="mb-0 text-break">{{ entry.reason }}</p></div></div></article>
-        <template v-if="accessRole === 'owner'"><h2 class="h4 mt-4">ผู้ดูแลระบบ</h2><p class="text-muted">กำหนดสิทธิ์ให้บัญชี Google ที่ยืนยันแล้วเท่านั้น</p><div class="review-box"><div v-for="member in members" :key="member.id" class="d-flex justify-content-between align-items-center border-bottom py-2"><span><strong>{{ member.name || member.email }}</strong> <small class="text-muted">{{ member.role }}</small></span><button v-if="member.role === 'administrator'" class="btn btn-sm btn-outline-danger" @click="revokeAdministrator(member.id)">ถอนสิทธิ์</button></div><p v-if="!members.length" class="text-muted mb-0">ยังไม่มีผู้ดูแลเพิ่มเติม</p></div><h3 class="h5">บัญชีที่ยืนยันแล้ว</h3><div class="review-box"><div v-for="account in verifiedAccounts.filter((account) => !members.some((member) => member.id === account.id))" :key="account.id" class="d-flex justify-content-between align-items-center border-bottom py-2"><span>{{ account.name || account.email }}</span><button class="btn btn-sm btn-purple" @click="grantAdministrator(account.id)">แต่งตั้งผู้ดูแล</button></div><p v-if="!verifiedAccounts.filter((account) => !members.some((member) => member.id === account.id)).length" class="text-muted mb-0">ไม่มีบัญชีที่รอการแต่งตั้ง</p></div></template>
+        <button class="btn btn-link text-purple p-0 mb-3" @click="dashboard = false">
+          ← กลับหน้ารายวิชา
+        </button>
+        <h1>แดชบอร์ดผู้ดูแล</h1>
+        <p v-if="error" class="text-danger" role="alert">{{ error }}</p>
+        <h2 class="h4 mt-4">เพิ่มหมวดหมู่</h2>
+        <div class="input-group mb-3">
+          <input
+            v-model="categoryName"
+            class="form-control"
+            aria-label="ชื่อหมวดหมู่"
+          /><button class="btn btn-purple" @click="addCategory">เพิ่ม</button>
+        </div>
+        <div class="category-menu">
+          <button
+            v-for="category in categories"
+            :key="category.id"
+            class="btn category-btn btn-outline-purple"
+            @click="renameCategory(category)"
+          >
+            {{ category.name }} · แก้ไข
+          </button>
+        </div>
+        <h2 class="h4">{{ editingCourseId ? "แก้ไขรายวิชา" : "เพิ่มรายวิชา" }}</h2>
+        <div class="row g-2">
+          <div class="col-md-3">
+            <input v-model="courseCode" class="form-control" placeholder="รหัสวิชา" />
+          </div>
+          <div class="col-md-4">
+            <input v-model="courseName" class="form-control" placeholder="ชื่อรายวิชา" />
+          </div>
+          <div class="col-md-3">
+            <select v-model="courseCategoryId" class="form-select">
+              <option
+                v-for="category in categories"
+                :key="category.id"
+                :value="category.id"
+              >
+                {{ category.name }}
+              </option>
+            </select>
+          </div>
+          <div class="col-md-2">
+            <button class="btn btn-purple w-100" @click="addCourse">
+              {{ editingCourseId ? "บันทึก" : "เพิ่มรายวิชา" }}
+            </button>
+          </div>
+        </div>
+        <h2 class="h4 mt-4">รายวิชา</h2>
+        <ul class="list-group">
+          <li
+            v-for="course in managedCourses"
+            :key="course.id"
+            class="list-group-item d-flex justify-content-between align-items-center"
+          >
+            <span
+              ><strong>{{ course.code }}</strong> · {{ course.name_th }}
+              <small class="text-muted"
+                >{{ course.category_name }} · {{ course.status }}</small
+              ></span
+            ><span class="d-flex gap-2"
+              ><button class="btn btn-sm btn-outline-purple" @click="editCourse(course)">
+                แก้ไข</button
+              ><button
+                v-if="course.status === 'approved'"
+                class="btn btn-sm btn-outline-danger"
+                @click="archiveCourse(course.id)"
+              >
+                เก็บเข้าคลัง
+              </button></span
+            >
+          </li>
+        </ul>
+        <h2 class="h4 mt-4">รวมรายวิชาซ้ำ</h2>
+        <div class="row g-2">
+          <div class="col-md-5">
+            <select v-model="mergeSourceId" class="form-select">
+              <option value="">รายวิชาต้นทาง</option>
+              <option
+                v-for="course in managedCourses.filter(
+                  (course) => course.status === 'approved'
+                )"
+                :key="course.id"
+                :value="course.id"
+              >
+                {{ course.code }} · {{ course.name_th }}
+              </option>
+            </select>
+          </div>
+          <div class="col-md-5">
+            <select v-model="mergeTargetId" class="form-select">
+              <option value="">รายวิชาที่เก็บไว้</option>
+              <option
+                v-for="course in managedCourses.filter(
+                  (course) => course.status === 'approved' && course.id !== mergeSourceId
+                )"
+                :key="course.id"
+                :value="course.id"
+              >
+                {{ course.code }} · {{ course.name_th }}
+              </option>
+            </select>
+          </div>
+          <div class="col-md-2">
+            <button class="btn btn-outline-purple w-100" @click="previewMerge">
+              ตรวจสอบ
+            </button>
+          </div>
+        </div>
+        <div v-if="mergePreview" class="review-box">
+          <p class="mb-2">
+            ย้าย {{ mergePreview.offerings_to_move }} กลุ่มเรียน และเก็บ
+            {{ mergePreview.reviews_preserved }} รีวิว จาก
+            <strong>{{ mergePreview.source_code }}</strong> ไปยัง
+            <strong>{{ mergePreview.target_code }}</strong>
+          </p>
+          <button class="btn btn-purple" @click="confirmMerge">ยืนยันการรวม</button>
+        </div>
+        <h2 class="h4 mt-4">ภาคการศึกษาและกลุ่มเรียน</h2>
+        <div class="row g-2 mb-3">
+          <div class="col-md-4">
+            <input
+              v-model.number="periodYear"
+              class="form-control"
+              type="number"
+              aria-label="ปีการศึกษา"
+            />
+          </div>
+          <div class="col-md-5">
+            <input
+              v-model="periodSemester"
+              class="form-control"
+              aria-label="ภาคการศึกษา"
+            />
+          </div>
+          <div class="col-md-3">
+            <button class="btn btn-outline-purple w-100" @click="addPeriod">
+              เพิ่มภาคการศึกษา
+            </button>
+          </div>
+        </div>
+        <p class="text-muted">
+          {{
+            periods
+              .map((period) => `${period.semester}/${period.academic_year}`)
+              .join(" · ") || "ยังไม่มีภาคการศึกษา"
+          }}
+        </p>
+        <div class="row g-2">
+          <div class="col-md-4">
+            <select
+              v-model="offeringCourseId"
+              class="form-select"
+              @change="loadCourseOfferings"
+            >
+              <option value="">รายวิชา</option>
+              <option
+                v-for="course in managedCourses.filter(
+                  (course) => course.status === 'approved'
+                )"
+                :key="course.id"
+                :value="course.id"
+              >
+                {{ course.code }}
+              </option>
+            </select>
+          </div>
+          <div class="col-md-2">
+            <input
+              v-model.number="offeringYear"
+              class="form-control"
+              type="number"
+              aria-label="ปีการศึกษา"
+            />
+          </div>
+          <div class="col-md-2">
+            <input v-model="offeringSemester" class="form-control" placeholder="ภาค" />
+          </div>
+          <div class="col-md-2">
+            <input v-model="offeringSection" class="form-control" placeholder="กลุ่ม" />
+          </div>
+          <div class="col-md-2">
+            <select v-model.number="offeringDay" class="form-select">
+              <option v-for="day in [1, 2, 3, 4, 5, 6, 7]" :key="day" :value="day">
+                {{ dayNames[day] }}
+              </option>
+            </select>
+          </div>
+          <div class="col-md-4">
+            <input
+              v-model="offeringInstructor"
+              class="form-control"
+              placeholder="ผู้สอน"
+            />
+          </div>
+          <div class="col-md-3">
+            <input v-model="offeringStart" class="form-control" type="time" />
+          </div>
+          <div class="col-md-3">
+            <input v-model="offeringEnd" class="form-control" type="time" />
+          </div>
+          <div class="col-md-2">
+            <button class="btn btn-purple w-100" @click="addOffering">
+              {{ editingOfferingId ? "บันทึกกลุ่มเรียน" : "เพิ่มกลุ่มเรียน" }}
+            </button>
+          </div>
+        </div>
+        <div v-if="offeringCourseId" class="mt-2">
+          <p v-if="!courseOfferings.length" class="text-muted">
+            ยังไม่มีกลุ่มเรียนสำหรับรายวิชานี้
+          </p>
+          <ul v-else class="list-group">
+            <li
+              v-for="offering in courseOfferings"
+              :key="offering.id"
+              class="list-group-item d-flex justify-content-between align-items-center"
+            >
+              <span
+                >กลุ่ม {{ offering.section }} · {{ offering.semester }}/{{
+                  offering.academic_year
+                }}<small v-if="offering.instructor_name" class="text-muted">
+                  · {{ offering.instructor_name }}</small
+                ></span
+              ><button
+                class="btn btn-sm btn-outline-purple"
+                @click="editOffering(offering)"
+              >
+                แก้ไข
+              </button>
+            </li>
+          </ul>
+        </div>
+        <h2 class="h4 mt-4">นำเข้ากลุ่มเรียนจำนวนมาก</h2>
+        <p class="text-muted mb-2">
+          วางข้อมูลเป็นรายการ JSON ของกลุ่มเรียน เช่น
+          <code
+            >[{"courseCode":"JC100","academicYear":2569,"semester":"1","section":"2","instructorName":"อาจารย์เอ","dayOfWeek":2,"startsAt":"09:00","endsAt":"11:00"}]</code
+          >
+        </p>
+        <textarea
+          v-model="bulkImportText"
+          class="form-control mb-2"
+          rows="4"
+          aria-label="ข้อมูลนำเข้ากลุ่มเรียน (JSON)"
+          placeholder='[{"courseCode":"JC100","academicYear":2569,"semester":"1","section":"2","instructorName":"อาจารย์เอ","dayOfWeek":2,"startsAt":"09:00","endsAt":"11:00"}]'
+        ></textarea>
+        <div class="d-flex gap-2 mb-3">
+          <button
+            class="btn btn-outline-purple"
+            :disabled="!bulkImportText.trim()"
+            @click="previewBulkImport"
+          >
+            ตรวจสอบ</button
+          ><button
+            class="btn btn-purple"
+            :disabled="!bulkImportPreview.length"
+            @click="confirmBulkImport"
+          >
+            ยืนยันนำเข้า
+          </button>
+        </div>
+        <p v-if="bulkImportResult" class="alert alert-success">
+          นำเข้าสำเร็จ: เพิ่มใหม่ {{ bulkImportResult.created_count }} · แก้ไข
+          {{ bulkImportResult.updated_count }} · ไม่เปลี่ยนแปลง
+          {{ bulkImportResult.existing_count }}
+        </p>
+        <div v-if="bulkImportPreview.length" class="table-responsive mb-3">
+          <table class="table table-sm align-middle">
+            <thead>
+              <tr>
+                <th>แถว</th>
+                <th>วิชา</th>
+                <th>ภาค/ปี</th>
+                <th>กลุ่ม</th>
+                <th>สถานะ</th>
+                <th>หมายเหตุ</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="row in bulkImportPreview" :key="row.rowNumber">
+                <td>{{ row.rowNumber }}</td>
+                <td>{{ row.courseCode }}</td>
+                <td>{{ row.semester }}/{{ row.academicYear }}</td>
+                <td>{{ row.section }}</td>
+                <td>
+                  <span :class="row.valid ? 'text-success' : 'text-danger'">{{
+                    row.valid
+                      ? row.action === "create"
+                        ? "เพิ่มใหม่"
+                        : row.action === "update"
+                        ? "แก้ไข"
+                        : "ไม่เปลี่ยนแปลง"
+                      : "ผิดพลาด"
+                  }}</span>
+                </td>
+                <td class="text-muted">{{ row.reason }}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <h2 class="h4 mt-4">ข้อเสนอกลุ่มเรียน</h2>
+        <p v-if="!proposals.length" class="text-muted">ไม่มีข้อเสนอที่รอตรวจสอบ</p>
+        <div v-for="proposal in proposals" :key="proposal.id" class="review-box">
+          <div class="d-flex flex-wrap justify-content-between gap-2 align-items-center">
+            <span
+              ><strong>{{ proposal.course_code }}</strong> · กลุ่ม
+              {{ proposal.section }} · {{ proposal.semester }}/{{ proposal.academic_year
+              }}<small v-if="proposal.instructor_name" class="d-block text-muted">{{
+                proposal.instructor_name
+              }}</small></span
+            ><span class="d-flex gap-2"
+              ><button
+                class="btn btn-sm btn-outline-danger"
+                @click="resolveProposal(proposal.id, false)"
+              >
+                ปฏิเสธ</button
+              ><button
+                class="btn btn-sm btn-purple"
+                @click="resolveProposal(proposal.id, true)"
+              >
+                อนุมัติ
+              </button></span
+            >
+          </div>
+        </div>
+        <h2 class="h4 mt-4">ตรวจสอบรีวิว</h2>
+        <div class="row g-2 mb-3">
+          <div class="col-md-5">
+            <input
+              v-model="moderationSearch"
+              class="form-control"
+              placeholder="ค้นหาข้อความรีวิว"
+              aria-label="ค้นหาข้อความรีวิว"
+            />
+          </div>
+          <div class="col-md-4">
+            <select v-model="moderationState" class="form-select" aria-label="สถานะรีวิว">
+              <option value="all">ทุกสถานะ</option>
+              <option value="visible">เผยแพร่</option>
+              <option value="hidden">ซ่อน</option>
+              <option value="removed">นำออก</option>
+            </select>
+          </div>
+          <div class="col-md-3">
+            <button class="btn btn-outline-purple w-100" @click="loadModerationReviews">
+              ค้นหา
+            </button>
+          </div>
+        </div>
+        <p v-if="!visibleModerationReviews.length" class="text-muted">ไม่พบรีวิว</p>
+        <article
+          v-for="review in visibleModerationReviews"
+          :key="review.id"
+          class="review-box"
+        >
+          <div class="d-flex justify-content-between gap-2">
+            <span class="stars">{{ "★".repeat(review.rating) }}</span
+            ><small
+              >{{ moderationStateLabel(review.moderation_state)
+              }}<span v-if="!review.author_active"> · ผู้เขียนถอนการเผยแพร่</span></small
+            >
+          </div>
+          <p class="mb-2">{{ review.text }}</p>
+          <input
+            v-model="moderationReasons[review.id]"
+            class="form-control mb-2"
+            placeholder="เหตุผลสำหรับการเปลี่ยนสถานะ"
+            :aria-label="`เหตุผลสำหรับรีวิว ${review.id}`"
+          />
+          <div class="d-flex flex-wrap gap-2">
+            <button
+              v-if="review.moderation_state !== 'visible'"
+              class="btn btn-sm btn-outline-purple"
+              @click="moderateReview(review.id, 'visible')"
+            >
+              คืนสถานะ</button
+            ><button
+              v-if="review.moderation_state !== 'hidden'"
+              class="btn btn-sm btn-outline-danger"
+              @click="moderateReview(review.id, 'hidden')"
+            >
+              ซ่อน</button
+            ><button
+              v-if="review.moderation_state !== 'removed'"
+              class="btn btn-sm btn-outline-danger"
+              @click="moderateReview(review.id, 'removed')"
+            >
+              นำออก</button
+            ><button
+              class="btn btn-sm btn-outline-secondary"
+              @click="toggleModerationAudit(review.id)"
+            >
+              <i class="bi bi-clock-history me-1"></i
+              >{{ moderationAuditId === review.id ? "ซ่อนประวัติ" : "ประวัติการตรวจสอบ" }}
+            </button>
+          </div>
+          <div v-if="moderationAuditId === review.id" class="mt-3 border-top pt-3">
+            <p v-if="!moderationAudit.length" class="text-muted mb-0">
+              ยังไม่เคยมีการเปลี่ยนสถานะ
+            </p>
+            <div v-for="entry in moderationAudit" :key="entry.id" class="mb-2">
+              <small class="text-muted d-block"
+                >{{ entry.createdAt }} · {{ entry.actorName }}</small
+              ><span
+                >{{ moderationStateLabel(entry.priorState) }} →
+                {{ moderationStateLabel(entry.newState) }}</span
+              >
+              <p class="mb-0 text-break">{{ entry.reason }}</p>
+            </div>
+          </div>
+        </article>
+        <template v-if="accessRole === 'owner'"
+          ><h2 class="h4 mt-4">ผู้ดูแลระบบ</h2>
+          <p class="text-muted">กำหนดสิทธิ์ให้บัญชี Google ที่ยืนยันแล้วเท่านั้น</p>
+          <div class="review-box">
+            <div
+              v-for="member in members"
+              :key="member.id"
+              class="d-flex justify-content-between align-items-center border-bottom py-2"
+            >
+              <span
+                ><strong>{{ member.name || member.email }}</strong>
+                <small class="text-muted">{{ member.role }}</small></span
+              ><button
+                v-if="member.role === 'administrator'"
+                class="btn btn-sm btn-outline-danger"
+                @click="revokeAdministrator(member.id)"
+              >
+                ถอนสิทธิ์
+              </button>
+            </div>
+            <p v-if="!members.length" class="text-muted mb-0">ยังไม่มีผู้ดูแลเพิ่มเติม</p>
+          </div>
+          <h3 class="h5">บัญชีที่ยืนยันแล้ว</h3>
+          <div class="review-box">
+            <div
+              v-for="account in verifiedAccounts.filter(
+                (account) => !members.some((member) => member.id === account.id)
+              )"
+              :key="account.id"
+              class="d-flex justify-content-between align-items-center border-bottom py-2"
+            >
+              <span>{{ account.name || account.email }}</span
+              ><button
+                class="btn btn-sm btn-purple"
+                @click="grantAdministrator(account.id)"
+              >
+                แต่งตั้งผู้ดูแล
+              </button>
+            </div>
+            <p
+              v-if="
+                !verifiedAccounts.filter(
+                  (account) => !members.some((member) => member.id === account.id)
+                ).length
+              "
+              class="text-muted mb-0"
+            >
+              ไม่มีบัญชีที่รอการแต่งตั้ง
+            </p>
+          </div></template
+        >
       </section>
       <section v-else-if="timetable">
-        <div class="d-flex justify-content-between align-items-center mb-4 border-bottom pb-3"><div><h1 class="h3 text-purple"><i class="bi bi-grid-3x3-gap-fill me-2"></i>ตารางเรียนส่วนตัว</h1><p class="text-muted mb-0">My Timetable วางแผนการเรียนของคุณได้ง่ายๆ (คลิกที่วิชาเพื่อลบออก)</p></div><div class="d-flex gap-2"><button class="btn btn-outline-danger shadow-sm" @click="clearTimetable"><i class="bi bi-trash-fill me-1"></i>ล้างตาราง</button><button class="btn btn-purple shadow-sm" @click="timetable = false"><i class="bi bi-arrow-left-circle-fill me-1"></i>หน้าหลัก</button></div></div>
+        <div
+          class="d-flex justify-content-between align-items-center mb-4 border-bottom pb-3"
+        >
+          <div>
+            <h1 class="h3 text-purple">
+              <i class="bi bi-grid-3x3-gap-fill me-2"></i>ตารางเรียนส่วนตัว
+            </h1>
+            <p class="text-muted mb-0">
+              My Timetable วางแผนการเรียนของคุณได้ง่ายๆ (คลิกที่วิชาเพื่อลบออก)
+            </p>
+          </div>
+          <div class="d-flex gap-2">
+            <button class="btn btn-outline-danger shadow-sm" @click="clearTimetable">
+              <i class="bi bi-trash-fill me-1"></i>ล้างตาราง</button
+            ><button class="btn btn-purple shadow-sm" @click="timetable = false">
+              <i class="bi bi-arrow-left-circle-fill me-1"></i>หน้าหลัก
+            </button>
+          </div>
+        </div>
         <p v-if="error" class="text-danger" role="alert">{{ error }}</p>
-        <LegacyTimetableImport v-if="signedInEmail && neon" :email="signedInEmail" :catalog="courses" :client="neon as any" @imported="refreshTimetableAfterImport" />
-        <div v-if="!timetableEntries.length" class="review-box text-center py-5"><i class="bi bi-calendar-x" style="font-size: 5rem; color: var(--line);"></i><h2 class="h4 text-purple mt-4">ตารางเรียนยังว่างเปล่า</h2><p class="text-muted">กลับไปที่หน้าหลักแล้วกด "เพิ่มลงตาราง" ในรายละเอียดวิชากันเลย!</p><button class="btn btn-purple mt-3 px-4" @click="timetable = false">ไปเลือกวิชาเรียน</button></div>
-        <template v-else><div class="timetable-container"><div class="timetable-grid"><div class="time-header-row"><div v-for="hour in 12" :key="hour" class="time-header-slot">{{ String(hour + 7).padStart(2, '0') }}:00</div></div><div v-for="day in [1,2,3,4,5,6,7]" :key="day" class="day-row"><div class="day-label">{{ dayNames[day] }}</div><div class="day-track"><div v-for="entry in timetableEntries.filter((item) => item.day_of_week === day)" :key="`${entry.offering_id ?? entry.review_id}-${day}`" class="timetable-course" :class="courseColor(entry.course_code)" :style="timetableStyle(entry)" title="คลิกเพื่อลบวิชานี้" @click="confirmRemoveFromTimetable(entry)"><strong>{{ entry.course_code }} ({{ entry.section }})</strong><span v-if="entry.instructor_name" class="text-truncate">{{ entry.instructor_name }}</span><span>{{ timeValue(entry.starts_at) }}–{{ timeValue(entry.ends_at) }}</span></div></div></div></div></div><div v-if="false" class="review-box"><h2 class="h5">รายวิชาที่เลือก</h2><div v-for="entry in timetableEntries.filter((item, index, items) => items.findIndex((other) => (other.offering_id ?? other.review_id) === (item.offering_id ?? item.review_id)) === index)" :key="entry.offering_id ?? entry.review_id!" class="d-flex justify-content-between align-items-center border-bottom py-2"><span><strong>{{ entry.course_code }}</strong> {{ entry.course_name }} · กลุ่ม {{ entry.section }}<small v-if="entry.source === 'reported'" class="text-muted"> · ข้อมูลจากรีวิว</small></span><button class="btn btn-sm btn-outline-danger" @click="removeFromTimetable(entry)">ลบออก</button></div></div></template>
+        <LegacyTimetableImport
+          v-if="signedInEmail && neon"
+          :email="signedInEmail"
+          :catalog="courses"
+          :client="neon as any"
+          @imported="refreshTimetableAfterImport"
+        />
+        <div v-if="!timetableEntries.length" class="review-box text-center py-5">
+          <i class="bi bi-calendar-x" style="font-size: 5rem; color: var(--line)"></i>
+          <h2 class="h4 text-purple mt-4">ตารางเรียนยังว่างเปล่า</h2>
+          <p class="text-muted">
+            กลับไปที่หน้าหลักแล้วกด "เพิ่มลงตาราง" ในรายละเอียดวิชากันเลย!
+          </p>
+          <button class="btn btn-purple mt-3 px-4" @click="timetable = false">
+            ไปเลือกวิชาเรียน
+          </button>
+        </div>
+        <template v-else
+          ><div class="timetable-container">
+            <div class="timetable-grid">
+              <div class="time-header-row">
+                <div v-for="hour in 12" :key="hour" class="time-header-slot">
+                  {{ String(hour + 7).padStart(2, "0") }}:00
+                </div>
+              </div>
+              <div v-for="day in [1, 2, 3, 4, 5, 6, 7]" :key="day" class="day-row">
+                <div class="day-label">{{ dayNames[day] }}</div>
+                <div class="day-track">
+                  <div
+                    v-for="entry in timetableEntries.filter(
+                      (item) => item.day_of_week === day
+                    )"
+                    :key="`${entry.offering_id ?? entry.review_id}-${day}`"
+                    class="timetable-course"
+                    :class="courseColor(entry.course_code)"
+                    :style="timetableStyle(entry)"
+                    title="คลิกเพื่อลบวิชานี้"
+                    @click="confirmRemoveFromTimetable(entry)"
+                  >
+                    <strong>{{ entry.course_code }} ({{ entry.section }})</strong
+                    ><span v-if="entry.instructor_name" class="text-truncate">{{
+                      entry.instructor_name
+                    }}</span
+                    ><span
+                      >{{ timeValue(entry.starts_at) }}–{{
+                        timeValue(entry.ends_at)
+                      }}</span
+                    >
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div v-if="false" class="review-box">
+            <h2 class="h5">รายวิชาที่เลือก</h2>
+            <div
+              v-for="entry in timetableEntries.filter(
+                (item, index, items) =>
+                  items.findIndex(
+                    (other) =>
+                      (other.offering_id ?? other.review_id) ===
+                      (item.offering_id ?? item.review_id)
+                  ) === index
+              )"
+              :key="entry.offering_id ?? entry.review_id!"
+              class="d-flex justify-content-between align-items-center border-bottom py-2"
+            >
+              <span
+                ><strong>{{ entry.course_code }}</strong> {{ entry.course_name }} · กลุ่ม
+                {{ entry.section
+                }}<small v-if="entry.source === 'reported'" class="text-muted">
+                  · ข้อมูลจากรีวิว</small
+                ></span
+              ><button
+                class="btn btn-sm btn-outline-danger"
+                @click="removeFromTimetable(entry)"
+              >
+                ลบออก
+              </button>
+            </div>
+          </div></template
+        >
       </section>
-      <section v-else-if="myReviewsScreen"><div class="d-flex justify-content-between align-items-center mb-4 border-bottom pb-3"><div><h1 class="h3 text-purple"><i class="bi bi-star-fill text-warning me-2"></i>รีวิวของฉัน</h1><p class="text-muted mb-0">จัดการรีวิวทั้งหมดที่คุณเคยเขียนไว้ที่นี่</p></div><button class="btn btn-purple shadow-sm" @click="myReviewsScreen = false"><i class="bi bi-arrow-left-circle-fill me-1"></i>หน้าหลัก</button></div><p v-if="error" class="text-danger" role="alert">{{ error }}</p><p v-if="!myReviews.length" class="review-box text-muted">คุณยังไม่เคยเขียนรีวิว</p><article v-for="review in myReviews" :key="review.id" class="review-box"><h5 class="text-purple fw-bold mb-1">{{ courseFor(review)?.code ?? 'ไม่พบข้อมูลรายวิชา' }}</h5><p v-if="courseFor(review)" class="text-muted small mb-2">{{ courseFor(review)!.name_th }}</p><div class="d-flex justify-content-between align-items-center mb-3"><span class="stars">{{ '★'.repeat(review.rating) }}</span><span class="badge" :class="review.active ? 'selected-badge' : 'bg-light text-dark border'">{{ review.active ? 'เผยแพร่แล้ว' : 'ถอนการเผยแพร่' }}</span></div><template v-if="editingReviewId === review.id"><label class="form-label" :for="`edit-rating-${review.id}`">คะแนนรวม</label><select :id="`edit-rating-${review.id}`" v-model="editReviewRating" class="form-select mb-3"><option v-for="n in 5" :key="n" :value="n">{{ n }} ดาว</option></select><label class="form-label" :for="`edit-text-${review.id}`">ความคิดเห็น</label><textarea :id="`edit-text-${review.id}`" v-model="editReviewText" class="form-control mb-3" rows="3"></textarea><div class="d-flex gap-2 review-edit-actions"><button class="btn btn-outline-secondary" @click="cancelReviewEdit">ยกเลิก</button><button class="btn btn-purple" @click="saveReviewEdit">บันทึก</button></div></template><template v-else><p class="text-break">{{ review.text }}</p><div class="d-flex justify-content-between align-items-end mt-4"><small class="text-muted"><i class="bi bi-clock me-1"></i>{{ reviewDateTime(review.createdAt) }}</small><div class="d-flex gap-2"><button class="btn btn-sm btn-outline-purple px-3 rounded-pill" @click="beginReviewEdit(review)"><i class="bi bi-pencil-fill me-1"></i>แก้ไข</button><button v-if="review.active" class="btn btn-sm btn-outline-danger px-3 rounded-pill" @click="setMyReviewActive(review.id, false)">ถอนรีวิว</button><button v-else class="btn btn-sm btn-purple px-3 rounded-pill" @click="setMyReviewActive(review.id, true)">เผยแพร่อีกครั้ง</button><button class="btn btn-sm btn-outline-secondary px-3 rounded-pill" @click="toggleReviewHistory(review.id)"><i class="bi bi-clock-history me-1"></i>{{ reviewHistoryId === review.id ? 'ซ่อนประวัติ' : 'ดูประวัติการแก้ไข' }}</button></div></div><div v-if="reviewHistoryId === review.id" class="mt-3 border-top pt-3"><p v-if="!reviewHistory.length" class="text-muted mb-0">ยังไม่มีการแก้ไขก่อนหน้านี้</p><div v-for="revision in reviewHistory" :key="revision.id" class="mb-2"><small class="text-muted d-block"><span class="stars">{{ '★'.repeat(revision.rating) }}</span> · {{ reviewDateTime(revision.revisedAt) }}</small><p class="mb-0 text-break">{{ revision.text }}</p></div></div></template></article></section>
+      <section v-else-if="myReviewsScreen">
+        <div
+          class="d-flex justify-content-between align-items-center mb-4 border-bottom pb-3"
+        >
+          <div>
+            <h1 class="h3 text-purple">
+              <i class="bi bi-star-fill text-warning me-2"></i>รีวิวของฉัน
+            </h1>
+            <p class="text-muted mb-0">จัดการรีวิวทั้งหมดที่คุณเคยเขียนไว้ที่นี่</p>
+          </div>
+          <button class="btn btn-purple shadow-sm" @click="myReviewsScreen = false">
+            <i class="bi bi-arrow-left-circle-fill me-1"></i>หน้าหลัก
+          </button>
+        </div>
+        <p v-if="error" class="text-danger" role="alert">{{ error }}</p>
+        <p v-if="!myReviews.length" class="review-box text-muted">
+          คุณยังไม่เคยเขียนรีวิว
+        </p>
+        <article v-for="review in myReviews" :key="review.id" class="review-box">
+          <h5 class="text-purple fw-bold mb-1">
+            {{ courseFor(review)?.code ?? "ไม่พบข้อมูลรายวิชา" }}
+          </h5>
+          <p v-if="courseFor(review)" class="text-muted small mb-2">
+            {{ courseFor(review)!.name_th }}
+          </p>
+          <div class="d-flex justify-content-between align-items-center mb-3">
+            <span class="stars">{{ "★".repeat(review.rating) }}</span
+            ><span
+              class="badge"
+              :class="review.active ? 'selected-badge' : 'bg-light text-dark border'"
+              >{{ review.active ? "เผยแพร่แล้ว" : "ถอนการเผยแพร่" }}</span
+            >
+          </div>
+          <template v-if="editingReviewId === review.id"
+            ><label class="form-label" :for="`edit-rating-${review.id}`">คะแนนรวม</label
+            ><select
+              :id="`edit-rating-${review.id}`"
+              v-model="editReviewRating"
+              class="form-select mb-3"
+            >
+              <option v-for="n in 5" :key="n" :value="n">{{ n }} ดาว</option></select
+            ><label class="form-label" :for="`edit-text-${review.id}`">ความคิดเห็น</label
+            ><textarea
+              :id="`edit-text-${review.id}`"
+              v-model="editReviewText"
+              class="form-control mb-3"
+              rows="3"
+            ></textarea>
+            <div class="d-flex gap-2 review-edit-actions">
+              <button class="btn btn-outline-secondary" @click="cancelReviewEdit">
+                ยกเลิก</button
+              ><button class="btn btn-purple" @click="saveReviewEdit">บันทึก</button>
+            </div></template
+          ><template v-else
+            ><p class="text-break">{{ review.text }}</p>
+            <div class="d-flex justify-content-between align-items-end mt-4">
+              <small class="text-muted"
+                ><i class="bi bi-clock me-1"></i
+                >{{ reviewDateTime(review.createdAt) }}</small
+              >
+              <div class="d-flex gap-2">
+                <button
+                  class="btn btn-sm btn-outline-purple px-3 rounded-pill"
+                  @click="beginReviewEdit(review)"
+                >
+                  <i class="bi bi-pencil-fill me-1"></i>แก้ไข</button
+                ><button
+                  v-if="review.active"
+                  class="btn btn-sm btn-outline-danger px-3 rounded-pill"
+                  @click="setMyReviewActive(review.id, false)"
+                >
+                  ถอนรีวิว</button
+                ><button
+                  v-else
+                  class="btn btn-sm btn-purple px-3 rounded-pill"
+                  @click="setMyReviewActive(review.id, true)"
+                >
+                  เผยแพร่อีกครั้ง</button
+                ><button
+                  class="btn btn-sm btn-outline-secondary px-3 rounded-pill"
+                  @click="toggleReviewHistory(review.id)"
+                >
+                  <i class="bi bi-clock-history me-1"></i
+                  >{{
+                    reviewHistoryId === review.id ? "ซ่อนประวัติ" : "ดูประวัติการแก้ไข"
+                  }}
+                </button>
+              </div>
+            </div>
+            <div v-if="reviewHistoryId === review.id" class="mt-3 border-top pt-3">
+              <p v-if="!reviewHistory.length" class="text-muted mb-0">
+                ยังไม่มีการแก้ไขก่อนหน้านี้
+              </p>
+              <div v-for="revision in reviewHistory" :key="revision.id" class="mb-2">
+                <small class="text-muted d-block"
+                  ><span class="stars">{{ "★".repeat(revision.rating) }}</span> ·
+                  {{ reviewDateTime(revision.revisedAt) }}</small
+                >
+                <p class="mb-0 text-break">{{ revision.text }}</p>
+              </div>
+            </div></template
+          >
+        </article>
+      </section>
       <template v-else>
         <p v-if="loading">กำลังโหลดข้อมูล...</p>
         <template v-else>
           <p v-if="error" class="alert alert-danger" role="alert">{{ error }}</p>
-          <div class="mb-4 mt-2 hero-banner"><img src="https://i.postimg.cc/FFk3NRHV/IMG-0677.jpg" class="img-fluid w-100" alt="Banner แนะนำรายวิชา"></div>
-          <div class="about alert shadow-sm mb-4"><div class="text-center p-2 p-md-3"><h5 class="text-purple fw-bold mb-3"><i class="bi bi-info-circle-fill me-2"></i>เกี่ยวกับ Varasarn Close Friends</h5><p class="mb-3 about-description">เว็บไซต์รวบรวมรีวิววิชาเรียนของคณะวารสารศาสตร์และสื่อสารมวลชน<br class="d-none d-md-block">ทั้งหลักสูตรภาคปกติ (JC) และหลักสูตรนานาชาติ (BJM) เป็นพื้นที่รวบรวมความคิดเห็นจากนักศึกษา<br><span class="about-owner fw-bold">ดูแลโดยคณะกรรมการนักศึกษา (กน.วส.)</span></p><div class="about-contact d-inline-block px-4 py-2 mt-2"><small class="text-muted fw-medium"><i class="bi bi-headset me-1"></i>พบปัญหาหรือต้องการสอบถามติดต่อ</small><a href="https://www.instagram.com/varasarn_official" target="_blank" rel="noopener noreferrer" class="about-instagram text-decoration-none fw-bold ms-2"><i class="bi bi-instagram me-1"></i>IG : varasarn_official</a></div></div></div>
-          <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2"><h4 class="mb-0 section-label">รายวิชาทั้งหมด</h4><button v-if="accessRole" class="btn btn-outline-purple shadow-sm add-course-btn" @click="openCourseModal"><i class="bi bi-plus-lg me-1"></i>เพิ่มรายวิชาใหม่</button></div>
-          <div class="mb-3 search-wrap"><i class="bi bi-search search-icon"></i><input v-model="searchTerm" class="form-control form-control-lg shadow-sm" placeholder="ค้นหารหัสวิชา หรือ ชื่อวิชา..." aria-label="ค้นหารหัสวิชา หรือ ชื่อวิชา"></div>
-          <div class="category-menu"><button class="btn category-btn" :class="categoryFilter ? 'btn-outline-purple' : 'btn-purple'" @click="categoryFilter = ''">ทั้งหมด</button><button v-for="category in categories" :key="category.id" class="btn category-btn" :class="categoryFilter === category.name ? 'btn-purple' : 'btn-outline-purple'" @click="categoryFilter = category.name">{{ category.name }}</button></div>
-          <div class="row"><article v-for="course in filteredCourses" :key="course.id" class="col-md-4 mb-4"><button class="course-card card text-start w-100" @click="openCourse(course)"><span class="card-body"><span class="badge">{{ course.category_name }}</span><span class="card-title text-purple fw-bold h5 d-block">{{ course.code }}</span><span class="card-text d-block">{{ course.name_th }}</span></span></button></article></div><p v-if="!filteredCourses.length" class="text-muted">ไม่พบรายวิชาที่ตรงกับการค้นหา</p>
+          <div class="mb-4 mt-2 hero-banner">
+            <img
+              src="https://i.postimg.cc/FFk3NRHV/IMG-0677.jpg"
+              class="img-fluid w-100"
+              alt="Banner แนะนำรายวิชา"
+            />
+          </div>
+          <div class="about alert shadow-sm mb-4">
+            <div class="text-center p-2 p-md-3">
+              <h5 class="text-purple fw-bold mb-3">
+                <i class="bi bi-info-circle-fill me-2"></i>เกี่ยวกับ Varasarn Close
+                Friends
+              </h5>
+              <p class="mb-3 about-description">
+                เว็บไซต์รวบรวมรีวิววิชาเรียนของคณะวารสารศาสตร์และสื่อสารมวลชน<br
+                  class="d-none d-md-block"
+                />ทั้งหลักสูตรภาคปกติ (JC) และหลักสูตรนานาชาติ (BJM)
+                เป็นพื้นที่รวบรวมความคิดเห็นจากนักศึกษา<br /><span
+                  class="about-owner fw-bold"
+                  >ดูแลโดยคณะกรรมการนักศึกษา (กน.วส.)</span
+                >
+              </p>
+              <div class="about-contact d-inline-block px-4 py-2 mt-2">
+                <small class="text-muted fw-medium"
+                  ><i class="bi bi-headset me-1"></i>พบปัญหาหรือต้องการสอบถามติดต่อ</small
+                ><a
+                  href="https://www.instagram.com/varasarn_official"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  class="about-instagram text-decoration-none fw-bold ms-2"
+                  ><i class="bi bi-instagram me-1"></i>IG : varasarn_official</a
+                >
+              </div>
+            </div>
+          </div>
+          <div
+            class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2"
+          >
+            <h4 class="mb-0 section-label">รายวิชาทั้งหมด</h4>
+            <button
+              v-if="accessRole"
+              class="btn btn-outline-purple shadow-sm add-course-btn"
+              @click="openCourseModal"
+            >
+              <i class="bi bi-plus-lg me-1"></i>เพิ่มรายวิชาใหม่
+            </button>
+          </div>
+          <div class="mb-3 search-wrap">
+            <i class="bi bi-search search-icon"></i
+            ><input
+              v-model="searchTerm"
+              class="form-control form-control-lg shadow-sm"
+              placeholder="ค้นหารหัสวิชา หรือ ชื่อวิชา..."
+              aria-label="ค้นหารหัสวิชา หรือ ชื่อวิชา"
+            />
+          </div>
+          <div class="category-menu">
+            <button
+              class="btn category-btn"
+              :class="categoryFilter ? 'btn-outline-purple' : 'btn-purple'"
+              @click="categoryFilter = ''"
+            >
+              ทั้งหมด</button
+            ><button
+              v-for="category in categories"
+              :key="category.id"
+              class="btn category-btn"
+              :class="
+                categoryFilter === category.name ? 'btn-purple' : 'btn-outline-purple'
+              "
+              @click="categoryFilter = category.name"
+            >
+              {{ category.name }}
+            </button>
+          </div>
+          <div class="row">
+            <article
+              v-for="course in filteredCourses"
+              :key="course.id"
+              class="col-md-4 mb-4"
+            >
+              <button
+                class="course-card card text-start w-100"
+                @click="openCourse(course)"
+              >
+                <span class="card-body"
+                  ><span class="badge">{{ course.category_name }}</span
+                  ><span class="card-title text-purple fw-bold h5 d-block">{{
+                    course.code
+                  }}</span
+                  ><span class="card-text d-block">{{ course.name_th }}</span></span
+                >
+              </button>
+            </article>
+          </div>
+          <p v-if="!filteredCourses.length" class="text-muted">
+            ไม่พบรายวิชาที่ตรงกับการค้นหา
+          </p>
         </template>
-        <section v-if="selected" class="course-review-modal" @click.self="selected = null"><div class="course-review-dialog"><header class="course-review-header"><h1><i class="bi bi-book-half me-2"></i>{{ selected.code }} - {{ selected.name_th }}</h1><button class="btn-close btn-close-white" aria-label="ปิด" @click="selected = null"></button></header><div class="course-review-body"><p v-if="error" class="alert alert-danger" role="alert">{{ error }}</p><div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2"><h2 class="section-label mb-0">💬 รีวิวและเวลาเรียน</h2><button class="btn btn-purple btn-sm shadow-sm" @click="reviewFormOpen = !reviewFormOpen"><i class="bi bi-pencil-square me-1"></i>เขียนรีวิว / เพิ่มเซคชั่น</button></div><div v-if="reviewFormOpen" class="review-form-card mb-4"><h3 class="section-label mb-3">✍️ เขียนรีวิว &amp; ข้อมูลเวลาเรียน</h3><div class="row mb-3"><div class="col-md-6 mb-3 mb-md-0"><label for="review-semester">เทอมที่เรียน</label><select id="review-semester" v-model="reviewSemester" class="form-select"><option value="">เลือก...</option><option value="1">เทอม 1</option><option value="2">เทอม 2</option><option value="ฤดูร้อน">ฤดูร้อน</option></select></div><div class="col-md-6"><label for="review-year">ปีการศึกษา</label><select id="review-year" v-model.number="reviewYear" class="form-select"><option :value="0">เลือก...</option><option v-for="year in [2569,2568,2567,2566,2565]" :key="year" :value="year">{{ year }}</option></select></div></div><div class="row mb-3"><div class="col-md-6 mb-3 mb-md-0"><label for="review-teacher">อาจารย์ผู้สอน</label><input id="review-teacher" class="form-control" v-model="reviewTeacher" placeholder="ชื่ออาจารย์"></div><div class="col-md-6"><label for="review-section">กลุ่มเรียน (เช่น Sec 01)</label><input id="review-section" class="form-control" v-model="reviewSection" placeholder="Sec..."></div></div><div class="row mb-3"><div class="col-md-4 mb-3 mb-md-0"><label for="review-day">วัน</label><select id="review-day" v-model="reviewDay" class="form-select"><option v-for="day in dayNames.slice(1)" :key="day" :value="day">{{ day }}</option></select></div><div class="col-md-4 mb-3 mb-md-0"><label for="review-start">เวลาเริ่ม (น.)</label><input id="review-start" class="form-control" v-model="reviewStart" type="time"></div><div class="col-md-4"><label for="review-end">เวลาเลิก (น.)</label><input id="review-end" class="form-control" v-model="reviewEnd" type="time"></div></div><div class="mb-3"><label for="rating">ให้คะแนน (1-5 ดาว)</label><select id="rating" v-model="rating" class="form-select"><option v-for="n in 5" :key="n" :value="n">{{ n }} ดาว</option></select></div><div class="mb-4"><label for="review">ประสบการณ์ที่เจอ</label><textarea id="review" v-model="text" class="form-control" rows="3"></textarea></div><button class="btn btn-purple w-100 py-2" :disabled="publishing" @click="publish"><i class="bi bi-save me-1"></i>{{ publishing ? 'กำลังบันทึก...' : 'บันทึกข้อมูล' }}</button></div><div v-for="offering in offerings" :key="offering.id" class="offering-card mb-3"><div class="d-flex justify-content-between align-items-center gap-2"><span class="offering-term">เทอม {{ offering.semester }}/{{ offering.academic_year }}</span><button class="btn btn-sm btn-success" @click="addToTimetable(offering)"><i class="bi bi-pin-angle-fill me-1"></i>เพิ่มลงตาราง</button></div><div class="offering-meta mt-3"><strong>กลุ่ม {{ offering.section }}</strong><span v-if="offering.instructor_name"> · {{ offering.instructor_name }}</span></div></div><div class="review-box proposal-box"><h2>ไม่พบกลุ่มเรียนที่ต้องการ?</h2><p class="text-muted">เพิ่มข้อมูลกลุ่มเรียนที่ต้องการได้ทันที ข้อมูลนี้แยกจากการเขียนรีวิว</p><div class="row g-2"><div class="col-md-3"><input v-model.number="proposalYear" type="number" class="form-control" aria-label="ปีการศึกษาที่เสนอ"></div><div class="col-md-2"><input v-model="proposalSemester" class="form-control" placeholder="ภาค"></div><div class="col-md-3"><input v-model="proposalSection" class="form-control" placeholder="กลุ่มเรียน"></div><div class="col-md-4"><input v-model="proposalInstructor" class="form-control" placeholder="ผู้สอน (ถ้าทราบ)"></div></div><button class="btn btn-outline-purple mt-3" @click="submitProposal">เพิ่มกลุ่มเรียน</button><div v-if="myProposals.filter((proposal) => proposal.courseId === selected!.id).length" class="mt-3"><h3 class="h6">กลุ่มเรียนที่ฉันเพิ่ม</h3><p v-for="proposal in myProposals.filter((item) => item.courseId === selected!.id)" :key="proposal.id" class="mb-1">กลุ่ม {{ proposal.section }} · {{ proposal.semester }}/{{ proposal.academicYear }} <span class="text-muted">{{ proposal.status === 'pending' ? 'กำลังตรวจสอบ' : proposal.status === 'approved' ? 'เพิ่มแล้ว' : 'ไม่อนุมัติ' }}</span></p></div></div><div class="row g-2 mb-3"><div class="col-sm-4"><select v-model.number="reviewRatingFilter" class="form-select" aria-label="กรองคะแนน" @change="loadReviews()"><option :value="0">ทุกคะแนน</option><option v-for="score in 5" :key="score" :value="score">{{ score }} ดาว</option></select></div><div class="col-sm-4"><select v-model="reviewSemesterFilter" class="form-select" aria-label="กรองภาคการศึกษา" @change="loadReviews()"><option value="">ทุกเทอม</option><option value="1">เทอม 1</option><option value="2">เทอม 2</option><option value="ฤดูร้อน">ฤดูร้อน</option></select></div><div class="col-sm-4"><select v-model.number="reviewYearFilter" class="form-select" aria-label="กรองปีการศึกษา" @change="loadReviews()"><option :value="0">ทุกปี</option><option v-for="year in [2569,2568,2567,2566,2565]" :key="year" :value="year">{{ year }}</option></select></div></div><p v-if="!reviews.length" class="review-empty">ยังไม่มีรีวิว</p><article v-for="review in reviews" :key="review.id" class="review-box review-card"><div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3"><div class="d-flex align-items-center gap-2"><span class="stars">{{ '★'.repeat(review.rating) }}</span><span v-if="review.semester && review.academicYear" class="offering-term">เทอม {{ review.semester }}/{{ review.academicYear }}</span></div><span v-if="reviewDate(review.createdAt)" class="text-muted small"><i class="bi bi-clock me-1"></i>{{ reviewDate(review.createdAt) }}</span></div><div v-if="review.section" class="review-schedule sec-info-box"><div class="review-schedule-top"><div><span class="text-muted fw-semibold">กลุ่ม {{ review.section }}</span><span v-if="review.instructorName" class="fw-bold ms-2 text-dark"><i class="bi bi-person-video3 me-1"></i>{{ review.instructorName }}</span></div><button v-if="(reviewOffering(review) || hasReportedTime(review)) && !isReviewSelected(review)" class="btn btn-sm btn-success" @click="addReviewToTimetable(review)"><i class="bi bi-pin-angle-fill me-1"></i>เพิ่มลงตาราง</button><span v-else-if="isReviewSelected(review)" class="badge selected-badge"><i class="bi bi-check-circle-fill me-1"></i>อยู่ในตารางแล้ว</span></div><p v-if="review.dayOfWeek && review.startsAt && review.endsAt" class="mb-1 text-muted schedule-line"><i class="bi bi-calendar-event me-1"></i>วัน{{ dayNames[review.dayOfWeek] }} | ⏰ {{ timeValue(review.startsAt) }} - {{ timeValue(review.endsAt) }} น.</p><p v-if="reviewOffering(review)" class="small text-muted mb-1">ข้อมูลกลุ่มเรียนที่อนุมัติ · {{ offeringMeetings[reviewOffering(review)!.id].map((meeting) => `${dayNames[meeting.day]} ${meeting.start}–${meeting.end}`).join(' · ') }}<span v-if="reviewOffering(review)!.instructor_name"> · {{ reviewOffering(review)!.instructor_name }}</span></p><p v-else-if="!hasReportedTime(review)" class="small text-muted mb-1">รีวิวนี้ไม่มีข้อมูลเวลาเรียนที่ใช้เพิ่มลงตารางได้</p></div><p class="mt-3 mb-0">{{ review.text }}</p></article></div></div></section>
+        <section
+          v-if="selected"
+          class="course-review-modal"
+          @click.self="selected = null"
+        >
+          <div class="course-review-dialog">
+            <header class="course-review-header">
+              <h1>
+                <i class="bi bi-book-half me-2"></i>{{ selected.code }} -
+                {{ selected.name_th }}
+              </h1>
+              <button
+                class="btn-close btn-close-white"
+                aria-label="ปิด"
+                @click="selected = null"
+              ></button>
+            </header>
+            <div class="course-review-body">
+              <p v-if="error" class="alert alert-danger" role="alert">{{ error }}</p>
+              <div
+                class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2"
+              >
+                <h2 class="section-label mb-0">💬 รีวิวและเวลาเรียน</h2>
+                <button
+                  class="btn btn-purple btn-sm shadow-sm"
+                  @click="reviewFormOpen = !reviewFormOpen"
+                >
+                  <i class="bi bi-pencil-square me-1"></i>เขียนรีวิว / เพิ่มเซคชั่น
+                </button>
+              </div>
+              <div v-if="reviewFormOpen" class="review-form-card mb-4">
+                <h3 class="section-label mb-3">✍️ เขียนรีวิว &amp; ข้อมูลเวลาเรียน</h3>
+                <div class="row mb-3">
+                  <div class="col-md-6 mb-3 mb-md-0">
+                    <label for="review-semester">เทอมที่เรียน</label
+                    ><select
+                      id="review-semester"
+                      v-model="reviewSemester"
+                      class="form-select"
+                    >
+                      <option value="">เลือก...</option>
+                      <option value="1">เทอม 1</option>
+                      <option value="2">เทอม 2</option>
+                      <option value="ฤดูร้อน">ฤดูร้อน</option>
+                    </select>
+                  </div>
+                  <div class="col-md-6">
+                    <label for="review-year">ปีการศึกษา</label
+                    ><select
+                      id="review-year"
+                      v-model.number="reviewYear"
+                      class="form-select"
+                    >
+                      <option :value="0">เลือก...</option>
+                      <option
+                        v-for="year in [2569, 2568, 2567, 2566, 2565]"
+                        :key="year"
+                        :value="year"
+                      >
+                        {{ year }}
+                      </option>
+                    </select>
+                  </div>
+                </div>
+                <div class="row mb-3">
+                  <div class="col-md-6 mb-3 mb-md-0">
+                    <label for="review-teacher">อาจารย์ผู้สอน</label
+                    ><input
+                      id="review-teacher"
+                      class="form-control"
+                      v-model="reviewTeacher"
+                      placeholder="ชื่ออาจารย์"
+                    />
+                  </div>
+                  <div class="col-md-6">
+                    <label for="review-section">กลุ่มเรียน (เช่น Sec 01)</label
+                    ><input
+                      id="review-section"
+                      class="form-control"
+                      v-model="reviewSection"
+                      placeholder="Sec..."
+                    />
+                  </div>
+                </div>
+                <div class="row mb-3">
+                  <div class="col-md-4 mb-3 mb-md-0">
+                    <label for="review-day">วัน</label
+                    ><select id="review-day" v-model="reviewDay" class="form-select">
+                      <option v-for="day in dayNames.slice(1)" :key="day" :value="day">
+                        {{ day }}
+                      </option>
+                    </select>
+                  </div>
+                  <div class="col-md-4 mb-3 mb-md-0">
+                    <label for="review-start">เวลาเริ่ม (น.)</label
+                    ><input
+                      id="review-start"
+                      class="form-control"
+                      v-model="reviewStart"
+                      type="time"
+                    />
+                  </div>
+                  <div class="col-md-4">
+                    <label for="review-end">เวลาเลิก (น.)</label
+                    ><input
+                      id="review-end"
+                      class="form-control"
+                      v-model="reviewEnd"
+                      type="time"
+                    />
+                  </div>
+                </div>
+                <div class="mb-3">
+                  <label for="rating">ให้คะแนน (1-5 ดาว)</label
+                  ><select id="rating" v-model="rating" class="form-select">
+                    <option v-for="n in 5" :key="n" :value="n">{{ n }} ดาว</option>
+                  </select>
+                </div>
+                <div class="mb-4">
+                  <label for="review">ประสบการณ์ที่เจอ</label
+                  ><textarea
+                    id="review"
+                    v-model="text"
+                    class="form-control"
+                    rows="3"
+                  ></textarea>
+                </div>
+                <button
+                  class="btn btn-purple w-100 py-2"
+                  :disabled="publishing"
+                  @click="publish"
+                >
+                  <i class="bi bi-save me-1"></i
+                  >{{ publishing ? "กำลังบันทึก..." : "บันทึกข้อมูล" }}
+                </button>
+              </div>
+              <div
+                v-for="offering in offerings"
+                :key="offering.id"
+                class="offering-card mb-3"
+              >
+                <div class="d-flex justify-content-between align-items-center gap-2">
+                  <span class="offering-term"
+                    >เทอม {{ offering.semester }}/{{ offering.academic_year }}</span
+                  ><button
+                    class="btn btn-sm btn-success"
+                    @click="addToTimetable(offering)"
+                  >
+                    <i class="bi bi-pin-angle-fill me-1"></i>เพิ่มลงตาราง
+                  </button>
+                </div>
+                <div class="offering-meta mt-3">
+                  <strong>กลุ่ม {{ offering.section }}</strong
+                  ><span v-if="offering.instructor_name">
+                    · {{ offering.instructor_name }}</span
+                  >
+                </div>
+              </div>
+              <div class="review-box proposal-box">
+                <h2>ไม่พบกลุ่มเรียนที่ต้องการ?</h2>
+                <p class="text-muted">
+                  เพิ่มข้อมูลกลุ่มเรียนที่ต้องการได้ทันที ข้อมูลนี้แยกจากการเขียนรีวิว
+                </p>
+                <div class="row g-2">
+                  <div class="col-md-3">
+                    <input
+                      v-model.number="proposalYear"
+                      type="number"
+                      class="form-control"
+                      aria-label="ปีการศึกษาที่เสนอ"
+                    />
+                  </div>
+                  <div class="col-md-2">
+                    <input
+                      v-model="proposalSemester"
+                      class="form-control"
+                      placeholder="ภาค"
+                    />
+                  </div>
+                  <div class="col-md-3">
+                    <input
+                      v-model="proposalSection"
+                      class="form-control"
+                      placeholder="กลุ่มเรียน"
+                    />
+                  </div>
+                  <div class="col-md-4">
+                    <input
+                      v-model="proposalInstructor"
+                      class="form-control"
+                      placeholder="ผู้สอน (ถ้าทราบ)"
+                    />
+                  </div>
+                </div>
+                <button class="btn btn-outline-purple mt-3" @click="submitProposal">
+                  เพิ่มกลุ่มเรียน
+                </button>
+                <div
+                  v-if="myProposals.filter((proposal) => proposal.courseId === selected!.id).length"
+                  class="mt-3"
+                >
+                  <h3 class="h6">กลุ่มเรียนที่ฉันเพิ่ม</h3>
+                  <p
+                    v-for="proposal in myProposals.filter((item) => item.courseId === selected!.id)"
+                    :key="proposal.id"
+                    class="mb-1"
+                  >
+                    กลุ่ม {{ proposal.section }} · {{ proposal.semester }}/{{
+                      proposal.academicYear
+                    }}
+                    <span class="text-muted">{{
+                      proposal.status === "pending"
+                        ? "กำลังตรวจสอบ"
+                        : proposal.status === "approved"
+                        ? "เพิ่มแล้ว"
+                        : "ไม่อนุมัติ"
+                    }}</span>
+                  </p>
+                </div>
+              </div>
+              <div class="row g-2 mb-3">
+                <div class="col-sm-4">
+                  <select
+                    v-model.number="reviewRatingFilter"
+                    class="form-select"
+                    aria-label="กรองคะแนน"
+                    @change="loadReviews()"
+                  >
+                    <option :value="0">ทุกคะแนน</option>
+                    <option v-for="score in 5" :key="score" :value="score">
+                      {{ score }} ดาว
+                    </option>
+                  </select>
+                </div>
+                <div class="col-sm-4">
+                  <select
+                    v-model="reviewSemesterFilter"
+                    class="form-select"
+                    aria-label="กรองภาคการศึกษา"
+                    @change="loadReviews()"
+                  >
+                    <option value="">ทุกเทอม</option>
+                    <option value="1">เทอม 1</option>
+                    <option value="2">เทอม 2</option>
+                    <option value="ฤดูร้อน">ฤดูร้อน</option>
+                  </select>
+                </div>
+                <div class="col-sm-4">
+                  <select
+                    v-model.number="reviewYearFilter"
+                    class="form-select"
+                    aria-label="กรองปีการศึกษา"
+                    @change="loadReviews()"
+                  >
+                    <option :value="0">ทุกปี</option>
+                    <option
+                      v-for="year in [2569, 2568, 2567, 2566, 2565]"
+                      :key="year"
+                      :value="year"
+                    >
+                      {{ year }}
+                    </option>
+                  </select>
+                </div>
+              </div>
+              <p v-if="!reviews.length" class="review-empty">ยังไม่มีรีวิว</p>
+              <article
+                v-for="review in reviews"
+                :key="review.id"
+                class="review-box review-card"
+              >
+                <div
+                  class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3"
+                >
+                  <div class="d-flex align-items-center gap-2">
+                    <span class="stars">{{ "★".repeat(review.rating) }}</span
+                    ><span
+                      v-if="review.semester && review.academicYear"
+                      class="offering-term"
+                      >เทอม {{ review.semester }}/{{ review.academicYear }}</span
+                    >
+                  </div>
+                  <span v-if="reviewDate(review.createdAt)" class="text-muted small"
+                    ><i class="bi bi-clock me-1"></i
+                    >{{ reviewDate(review.createdAt) }}</span
+                  >
+                </div>
+                <div v-if="review.section" class="review-schedule sec-info-box">
+                  <div class="review-schedule-top">
+                    <div>
+                      <span class="text-muted fw-semibold"
+                        >กลุ่ม {{ review.section }}</span
+                      ><span v-if="review.instructorName" class="fw-bold ms-2 text-dark"
+                        ><i class="bi bi-person-video3 me-1"></i
+                        >{{ review.instructorName }}</span
+                      >
+                    </div>
+                    <button
+                      v-if="
+                        (reviewOffering(review) || hasReportedTime(review)) &&
+                        !isReviewSelected(review)
+                      "
+                      class="btn btn-sm btn-success"
+                      @click="addReviewToTimetable(review)"
+                    >
+                      <i class="bi bi-pin-angle-fill me-1"></i>เพิ่มลงตาราง</button
+                    ><span
+                      v-else-if="isReviewSelected(review)"
+                      class="badge selected-badge"
+                      ><i class="bi bi-check-circle-fill me-1"></i>อยู่ในตารางแล้ว</span
+                    >
+                  </div>
+                  <p
+                    v-if="review.dayOfWeek && review.startsAt && review.endsAt"
+                    class="mb-1 text-muted schedule-line"
+                  >
+                    <i class="bi bi-calendar-event me-1"></i>วัน{{
+                      dayNames[review.dayOfWeek]
+                    }}
+                    | ⏰ {{ timeValue(review.startsAt) }} -
+                    {{ timeValue(review.endsAt) }} น.
+                  </p>
+                  <p v-if="reviewOffering(review)" class="small text-muted mb-1">
+                    ข้อมูลกลุ่มเรียนที่อนุมัติ ·
+                    {{ offeringMeetings[reviewOffering(review)!.id].map((meeting) => `${dayNames[meeting.day]} ${meeting.start}–${meeting.end}`).join(' · ')
+                    }}<span v-if="reviewOffering(review)!.instructor_name">
+                      · {{ reviewOffering(review)!.instructor_name }}</span
+                    >
+                  </p>
+                  <p v-else-if="!hasReportedTime(review)" class="small text-muted mb-1">
+                    รีวิวนี้ไม่มีข้อมูลเวลาเรียนที่ใช้เพิ่มลงตารางได้
+                  </p>
+                </div>
+                <p class="mt-3 mb-0">{{ review.text }}</p>
+              </article>
+            </div>
+          </div>
+        </section>
       </template>
     </section>
-    <button v-if="signedIn" class="btn btn-purple floating-contact-btn" :aria-expanded="contactOpen" @click="contactOpen = !contactOpen"><i class="bi bi-chat-heart-fill fs-5"></i><span class="d-none d-md-inline ms-1">แจ้งปัญหา/ติดต่อ</span></button>
-    <div v-if="signedIn && contactOpen" class="contact-panel" role="dialog" aria-modal="true" aria-label="ติดต่อผู้ดูแล"><div class="contact-modal-card"><div class="contact-modal-header"><h5 class="modal-title text-purple mb-0"><i class="bi bi-headset me-2"></i>ติดต่อผู้ดูแล</h5><button class="btn-close" aria-label="ปิด" @click="contactOpen = false"></button></div><div class="contact-modal-body"><a href="https://line.me/R/ti/p/@293shldn" target="_blank" rel="noopener noreferrer" class="btn contact-line text-white fw-bold w-100 mb-3"><i class="bi bi-line fs-5 me-2"></i>ติดต่อทาง LINE</a><a href="https://www.instagram.com/varasarn_official" target="_blank" rel="noopener noreferrer" class="btn contact-instagram text-white fw-bold w-100"><i class="bi bi-instagram fs-5 me-2"></i>ทักแชททาง IG</a></div></div></div>
-    <div v-if="courseModalOpen" class="contact-panel" role="dialog" aria-modal="true" aria-label="เพิ่มรายวิชาใหม่" @click.self="courseModalOpen = false"><div class="contact-modal-card"><div class="contact-modal-header"><h5 class="modal-title text-purple mb-0">เพิ่มรายวิชาใหม่</h5><button class="btn-close" aria-label="ปิด" @click="courseModalOpen = false"></button></div><div class="course-modal-body"><p v-if="error" class="alert alert-danger" role="alert">{{ error }}</p><div class="mb-3"><label for="new-course-code">รหัสวิชา</label><input id="new-course-code" v-model="courseCode" class="form-control"></div><div class="mb-3"><label for="new-course-name">ชื่อวิชา</label><input id="new-course-name" v-model="courseName" class="form-control"></div><div class="mb-4"><label for="new-course-category">หมวดหมู่</label><select id="new-course-category" v-model="courseCategoryId" class="form-select"><option v-for="category in categories" :key="category.id" :value="category.id">{{ category.name }}</option></select></div><button class="btn btn-purple w-100 py-2" @click="submitCourseModal"><i class="bi bi-save me-1"></i>บันทึก</button></div></div></div>
-    <div v-if="confirmDialog" class="confirm-overlay" role="alertdialog" aria-modal="true" @click.self="resolveConfirm(false)"><div class="confirm-card"><i class="bi confirm-icon" :class="confirmDialog.variant === 'success' ? 'bi-check-circle-fill text-success' : 'bi-exclamation-triangle-fill text-warning'"></i><p class="confirm-message">{{ confirmDialog.message }}</p><div class="confirm-actions"><button class="btn btn-outline-secondary confirm-cancel" @click="resolveConfirm(false)">{{ confirmDialog.cancelLabel }}</button><button class="btn btn-purple confirm-accept" @click="resolveConfirm(true)">{{ confirmDialog.confirmLabel }}</button></div></div></div>
-    <div v-if="toastMessage" class="toast-banner" role="status" aria-live="polite"><i class="bi bi-check-circle-fill me-2"></i>{{ toastMessage }}</div>
+    <button
+      v-if="signedIn"
+      class="btn btn-purple floating-contact-btn"
+      :aria-expanded="contactOpen"
+      @click="contactOpen = !contactOpen"
+    >
+      <i class="bi bi-chat-heart-fill fs-5"></i
+      ><span class="d-none d-md-inline ms-1">แจ้งปัญหา/ติดต่อ</span>
+    </button>
+    <div
+      v-if="signedIn && contactOpen"
+      class="contact-panel"
+      role="dialog"
+      aria-modal="true"
+      aria-label="ติดต่อผู้ดูแล"
+    >
+      <div class="contact-modal-card">
+        <div class="contact-modal-header">
+          <h5 class="modal-title text-purple mb-0">
+            <i class="bi bi-headset me-2"></i>ติดต่อผู้ดูแล
+          </h5>
+          <button
+            class="btn-close"
+            aria-label="ปิด"
+            @click="contactOpen = false"
+          ></button>
+        </div>
+        <div class="contact-modal-body">
+          <a
+            href="https://line.me/R/ti/p/@293shldn"
+            target="_blank"
+            rel="noopener noreferrer"
+            class="btn contact-line text-white fw-bold w-100 mb-3"
+            ><i class="bi bi-line fs-5 me-2"></i>ติดต่อทาง LINE</a
+          ><a
+            href="https://www.instagram.com/varasarn_official"
+            target="_blank"
+            rel="noopener noreferrer"
+            class="btn contact-instagram text-white fw-bold w-100"
+            ><i class="bi bi-instagram fs-5 me-2"></i>ทักแชททาง IG</a
+          >
+        </div>
+      </div>
+    </div>
+    <div
+      v-if="courseModalOpen"
+      class="contact-panel"
+      role="dialog"
+      aria-modal="true"
+      aria-label="เพิ่มรายวิชาใหม่"
+      @click.self="courseModalOpen = false"
+    >
+      <div class="contact-modal-card">
+        <div class="contact-modal-header">
+          <h5 class="modal-title text-purple mb-0">เพิ่มรายวิชาใหม่</h5>
+          <button
+            class="btn-close"
+            aria-label="ปิด"
+            @click="courseModalOpen = false"
+          ></button>
+        </div>
+        <div class="course-modal-body">
+          <p v-if="error" class="alert alert-danger" role="alert">{{ error }}</p>
+          <div class="mb-3">
+            <label for="new-course-code">รหัสวิชา</label
+            ><input id="new-course-code" v-model="courseCode" class="form-control" />
+          </div>
+          <div class="mb-3">
+            <label for="new-course-name">ชื่อวิชา</label
+            ><input id="new-course-name" v-model="courseName" class="form-control" />
+          </div>
+          <div class="mb-4">
+            <label for="new-course-category">หมวดหมู่</label
+            ><select
+              id="new-course-category"
+              v-model="courseCategoryId"
+              class="form-select"
+            >
+              <option
+                v-for="category in categories"
+                :key="category.id"
+                :value="category.id"
+              >
+                {{ category.name }}
+              </option>
+            </select>
+          </div>
+          <button class="btn btn-purple w-100 py-2" @click="submitCourseModal">
+            <i class="bi bi-save me-1"></i>บันทึก
+          </button>
+        </div>
+      </div>
+    </div>
+    <div
+      v-if="confirmDialog"
+      class="confirm-overlay"
+      role="alertdialog"
+      aria-modal="true"
+      @click.self="resolveConfirm(false)"
+    >
+      <div class="confirm-card">
+        <i
+          class="bi confirm-icon"
+          :class="
+            confirmDialog.variant === 'success'
+              ? 'bi-check-circle-fill text-success'
+              : 'bi-exclamation-triangle-fill text-warning'
+          "
+        ></i>
+        <p class="confirm-message">{{ confirmDialog.message }}</p>
+        <div class="confirm-actions">
+          <button
+            class="btn btn-outline-secondary confirm-cancel"
+            @click="resolveConfirm(false)"
+          >
+            {{ confirmDialog.cancelLabel }}</button
+          ><button class="btn btn-purple confirm-accept" @click="resolveConfirm(true)">
+            {{ confirmDialog.confirmLabel }}
+          </button>
+        </div>
+      </div>
+    </div>
+    <div v-if="toastMessage" class="toast-banner" role="status" aria-live="polite">
+      <i class="bi bi-check-circle-fill me-2"></i>{{ toastMessage }}
+    </div>
   </main>
 </template>
