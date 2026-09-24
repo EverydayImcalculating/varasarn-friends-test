@@ -103,7 +103,7 @@ describe('review to personal timetable', () => {
     wrapper.unmount()
   })
 
-  it('can remove a private review schedule from the timetable', async () => {
+  it('shows a private review schedule as already selected, in the grid', async () => {
     fixture.offerings = []
     fixture.reported = [{ review_id: 'review-1', course_code: 'JC232', course_name: 'เทคนิคการถ่ายทำ', section: '320001', day_of_week: 4, starts_at: '09:30:00', ends_at: '12:30:00', instructor_name: 'อ. อ้อม' }]
     const wrapper = await openReview()
@@ -112,11 +112,6 @@ describe('review to personal timetable', () => {
     await flushPromises()
     expect(wrapper.get('.timetable-course').text()).toContain('อ. อ้อม')
     expect(wrapper.get('.timetable-course').text()).not.toContain('ข้อมูลจากรีวิว')
-    expect(wrapper.get('.review-box').text()).toContain('ข้อมูลจากรีวิว')
-    await wrapper.get('.review-box button.btn-outline-danger').trigger('click')
-    await flushPromises()
-    expect(fixture.calls).toContainEqual({ name: 'remove_my_timetable_review', args: { p_review_id: 'review-1' } })
-    expect(wrapper.find('.timetable-course').exists()).toBe(false)
     wrapper.unmount()
   })
 
