@@ -65,7 +65,7 @@ async function confirmImport() {
 
 <template>
   <div v-if="source.kind === 'error'" class="review-box" role="alert">{{ source.message }} ข้อมูลเดิมจะไม่ถูกลบ</div>
-  <div v-else-if="source.kind === 'none'" class="text-muted small mb-3">ไม่พบตารางเรียนเดิมในเบราว์เซอร์นี้ หากเคยใช้คนละเว็บไซต์หรืออุปกรณ์ ให้เพิ่มกลุ่มเรียนใหม่ในตาราง</div>
+  <template v-else-if="source.kind === 'none'"></template>
   <div v-else-if="dismissed" class="mb-3"><button class="btn btn-sm btn-outline-purple" @click="dismissed = false">ดูตารางเรียนเดิมที่พบ</button></div>
   <section v-else class="review-box legacy-import" aria-label="นำเข้าตารางเรียนเดิม">
     <div class="d-flex justify-content-between align-items-start gap-2 flex-wrap">

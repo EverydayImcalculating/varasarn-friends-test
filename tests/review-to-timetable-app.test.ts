@@ -120,6 +120,28 @@ describe('review to personal timetable', () => {
     wrapper.unmount()
   })
 
+  it('removes a class by clicking its timetable card, only after confirming', async () => {
+    fixture.offerings = []
+    fixture.reported = [{ review_id: 'review-1', course_code: 'JC232', course_name: 'เทคนิคการถ่ายทำ', section: '320001', day_of_week: 4, starts_at: '09:30:00', ends_at: '12:30:00', instructor_name: 'อ. อ้อม' }]
+    const wrapper = await openReview()
+    await wrapper.get('nav .btn-light').trigger('click')
+    await flushPromises()
+    await wrapper.get('.timetable-course').trigger('click')
+    await flushPromises()
+    expect(wrapper.get('.confirm-message').text()).toContain('JC232')
+    await wrapper.get('.confirm-cancel').trigger('click')
+    await flushPromises()
+    expect(fixture.calls.some(({ name }) => name === 'remove_my_timetable_review')).toBe(false)
+    expect(wrapper.find('.timetable-course').exists()).toBe(true)
+    await wrapper.get('.timetable-course').trigger('click')
+    await flushPromises()
+    await wrapper.get('.confirm-accept').trigger('click')
+    await flushPromises()
+    expect(fixture.calls).toContainEqual({ name: 'remove_my_timetable_review', args: { p_review_id: 'review-1' } })
+    expect(wrapper.find('.timetable-course').exists()).toBe(false)
+    wrapper.unmount()
+  })
+
   it('shows a private selection save failure without claiming success', async () => {
     fixture.offerings = []
     fixture.writeError = 'save failed'

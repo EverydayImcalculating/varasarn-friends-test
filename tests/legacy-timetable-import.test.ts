@@ -190,7 +190,7 @@ describe('legacy timetable import in the signed-in timetable', () => {
     const { client, calls } = timetableClient()
     const wrapper = mount(LegacyTimetableImport, { props: { email: 'other@example.com', catalog, client } })
     await flushPromises()
-    expect(wrapper.text()).toContain('ไม่พบตารางเรียนเดิมในเบราว์เซอร์นี้')
+    expect(wrapper.find('.legacy-import').exists()).toBe(false)
     expect(wrapper.text()).not.toContain('JC100')
     expect(calls).toEqual([])
   })
