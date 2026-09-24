@@ -28,7 +28,6 @@ vi.mock('../src/neon', () => ({
     },
   },
   signInWithGoogle: async () => undefined,
-  withRange: (query: unknown) => query,
 }))
 
 describe('add-course button on the catalog page', () => {

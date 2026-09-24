@@ -1,5 +1,5 @@
 import type { RpcClient } from './reviews'
-import { withRange } from '../neon'
+import { fetchAllRows, withRange } from './pagination'
 
 export type VerifiedAccount = { id: string; name: string; email: string }
 export type RoleAssignment = VerifiedAccount & { role: 'owner' | 'administrator'; grantedAt: string }
@@ -77,9 +77,9 @@ export class AdminService {
   }
 
   async listManageableCourses(): Promise<ManagedCourse[]> {
-    const { data, error } = await withRange(this.client.rpc('list_manageable_courses'), 4999)
+    const { data, error } = await fetchAllRows<ManagedCourse>((from, to) => withRange((this.client as any).rpc('list_manageable_courses', undefined, { count: 'exact' }), from, to))
     if (error) throw new Error(error.message)
-    return (data ?? []) as ManagedCourse[]
+    return data
   }
 
   async updateCourse(courseId: string, course: CourseDraft): Promise<void> {

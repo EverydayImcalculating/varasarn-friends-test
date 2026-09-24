@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from 'vue'
-import { neon, signInWithGoogle, withRange } from './neon'
+import { neon, signInWithGoogle } from './neon'
+import { fetchAllRows, withRange } from './services/pagination'
 import { AdminService, type AcademicPeriod, type BulkOfferingResult, type BulkOfferingRow, type Category, type ManagedCourse, type MergePreview, type ModerationAuditEntry, type ModerationReview, type OfferingImportPreview, type PendingProposal, type RoleAssignment, type VerifiedAccount } from './services/admin'
 import { ReviewService, type VisibleReview } from './services/reviews'
 import { TimetableService } from './services/timetable-client'
@@ -62,8 +63,8 @@ const filteredCourses = computed(() => courses.value.filter((course) => {
 }))
 async function loadCatalog() {
   if (!neon) { loading.value = false; error.value = 'ตั้งค่า Neon endpoint ใน .env.local ก่อนใช้งาน'; return }
-  const { data, error: apiError } = await withRange((neon as any).rpc('list_approved_catalog'), 4999)
-  if (apiError) error.value = apiError.message; else courses.value = data ?? []
+  const { data, error: apiError } = await fetchAllRows<Course>((from, to) => withRange((neon as any).rpc('list_approved_catalog', undefined, { count: 'exact' }), from, to))
+  if (apiError) error.value = apiError.message; else courses.value = data
   loading.value = false
 }
 async function loadOfferings(courseId: string) {
