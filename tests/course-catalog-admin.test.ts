@@ -18,14 +18,17 @@ vi.mock('../src/neon', () => ({
       if (name === 'list_categories') return { data: fixture.categories, error: null }
       if (name === 'current_access') return { data: [{ role: fixture.role }], error: null }
       if (name === 'create_course') {
-        const code = String((args as { p_code?: string })?.p_code ?? '')
+        const { p_code: code, p_name_th: nameTh, p_category_id: categoryId } = args as { p_code?: string; p_name_th?: string; p_category_id?: string }
         if (fixture.catalog.some((course) => course.code === code)) return { data: null, error: { message: `รหัสวิชา ${code} มีอยู่แล้ว` } }
+        const category = fixture.categories.find((item) => item.id === categoryId)
+        fixture.catalog = [...fixture.catalog, { id: `course-${code}`, code: String(code), name_th: String(nameTh), category_name: category?.name ?? '' }]
         return { data: null, error: null }
       }
       throw new Error(`Unexpected RPC: ${name}`)
     },
   },
   signInWithGoogle: async () => undefined,
+  withRange: (query: unknown) => query,
 }))
 
 describe('add-course button on the catalog page', () => {
@@ -54,6 +57,9 @@ describe('add-course button on the catalog page', () => {
     expect(fixture.calls).toContainEqual({ name: 'create_course', args: { p_code: 'JC200', p_name_th: 'วิชาใหม่', p_category_id: 'cat-1' } })
     expect(wrapper.find('.course-modal-body').exists()).toBe(false)
     expect(wrapper.get('.toast-banner').text()).toContain('เพิ่มรายวิชาสำเร็จ')
+    expect(fixture.calls).toContainEqual({ name: 'list_approved_catalog', args: undefined })
+    const codes = wrapper.findAll('.course-card .card-title').map((node) => node.text())
+    expect(codes).toContain('JC200')
     wrapper.unmount()
   })
 

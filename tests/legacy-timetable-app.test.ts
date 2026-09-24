@@ -22,6 +22,7 @@ vi.mock('../src/neon', () => ({
     },
   },
   signInWithGoogle: async () => undefined,
+  withRange: (query: unknown) => query,
 }))
 
 describe('legacy timetable detection after authentication', () => {

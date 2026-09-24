@@ -1,4 +1,5 @@
 import type { RpcClient } from './reviews'
+import { withRange } from '../neon'
 
 export type VerifiedAccount = { id: string; name: string; email: string }
 export type RoleAssignment = VerifiedAccount & { role: 'owner' | 'administrator'; grantedAt: string }
@@ -76,7 +77,7 @@ export class AdminService {
   }
 
   async listManageableCourses(): Promise<ManagedCourse[]> {
-    const { data, error } = await this.client.rpc('list_manageable_courses')
+    const { data, error } = await withRange(this.client.rpc('list_manageable_courses'), 4999)
     if (error) throw new Error(error.message)
     return (data ?? []) as ManagedCourse[]
   }
