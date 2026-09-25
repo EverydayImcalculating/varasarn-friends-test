@@ -263,7 +263,7 @@ onMounted(async () => {
         >
           <i class="bi bi-journal-text me-2"></i>Varasarn Close Friends
         </button>
-        <div class="d-flex align-items-center gap-2">
+        <div class="d-none d-md-flex align-items-center gap-2">
           <button
             class="btn btn-sm btn-light text-purple fw-bold rounded-pill px-3 shadow-sm"
             @click="openTimetable"
@@ -357,47 +357,57 @@ onMounted(async () => {
       </div>
     </section>
     <section v-else class="container app-body">
-      <div
-        class="mobile-account-menu d-md-none mb-3"
-      >
-        <button
-          class="btn user-dropdown-btn dropdown-toggle w-100 text-start d-flex justify-content-between align-items-center"
-          type="button"
-          :aria-expanded="accountMenuOpen"
-          @click="accountMenuOpen = !accountMenuOpen"
-        >
-          <span><i class="bi bi-person-circle me-1"></i>{{ displayName }}</span>
-        </button>
-        <div v-if="accountMenuOpen" class="account-menu-list dropdown-menu-custom w-100">
+      <div class="mobile-navigation-row d-md-none mb-3">
+        <div class="mobile-account-menu">
           <button
-            class="dropdown-item py-2"
-            @click="
-              accountMenuOpen = false;
-              openMyReviews();
-            "
+            class="btn user-dropdown-btn dropdown-toggle w-100 text-start d-flex justify-content-between align-items-center"
+            type="button"
+            :aria-expanded="accountMenuOpen"
+            @click="accountMenuOpen = !accountMenuOpen"
           >
-            <i class="bi bi-star-fill text-warning me-2"></i>รีวิวของฉัน</button
-          ><button
-            v-if="accessRole"
-            class="dropdown-item py-2"
-            @click="
-              accountMenuOpen = false;
-              openDashboard();
-            "
-          >
-            แดชบอร์ดผู้ดูแล
+            <span class="mobile-account-name"><i class="bi bi-person-circle me-1"></i>{{ displayName }}</span>
           </button>
-          <hr class="dropdown-divider" />
-          <button
-            class="dropdown-item py-2 text-danger fw-bold"
-            @click="
-              accountMenuOpen = false;
-              signOut();
-            "
-          >
-            <i class="bi bi-box-arrow-right me-2"></i>ออกจากระบบ
-          </button>
+          <div v-if="accountMenuOpen" class="account-menu-list dropdown-menu-custom w-100">
+            <button
+              class="dropdown-item py-2"
+              @click="
+                accountMenuOpen = false;
+                openMyReviews();
+              "
+            >
+              <i class="bi bi-star-fill text-warning me-2"></i>รีวิวของฉัน</button
+            ><button
+              v-if="accessRole"
+              class="dropdown-item py-2"
+              @click="
+                accountMenuOpen = false;
+                openDashboard();
+              "
+            >
+              แดชบอร์ดผู้ดูแล
+            </button>
+            <hr class="dropdown-divider" />
+            <button
+              class="dropdown-item py-2 text-danger fw-bold"
+              @click="
+                accountMenuOpen = false;
+                signOut();
+              "
+            >
+              <i class="bi bi-box-arrow-right me-2"></i>ออกจากระบบ
+            </button>
+          </div>
         </div>
+        <button
+          class="btn btn-sm btn-light text-purple fw-bold rounded-pill px-3 shadow-sm mobile-timetable-btn"
+          @click="openTimetable"
+        >
+          <i class="bi bi-grid-3x3-gap-fill me-1"></i>ตารางเรียน<span
+            v-if="legacySource.kind === 'found'"
+            class="badge bg-warning text-dark ms-1"
+            >เดิม</span
+          >
+        </button>
       </div>
       <AdminDashboard
         v-if="dashboard && accessRole"

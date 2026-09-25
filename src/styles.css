@@ -28,6 +28,11 @@ body { font-family: 'Prompt', sans-serif; background: var(--purple-50); color: v
 h1, h2, h3, h4, h5, h6 { font-family: 'Kanit', sans-serif; }
 .navbar-custom { background: linear-gradient(135deg, var(--purple-700) 0%, var(--purple-600) 100%); padding: 18px 0; }
 .navbar-brand { color: var(--white) !important; font-family: 'Kanit', sans-serif; font-weight: 600 !important; font-size: 1.35rem; cursor: pointer; }
+.mobile-navigation-row { display: flex; align-items: center; gap: 8px; }
+.mobile-account-menu { flex: 1 1 0; min-width: 0; }
+.mobile-account-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.mobile-account-menu .account-menu-list { min-width: 0; }
+.mobile-timetable-btn { flex: 0 0 auto; white-space: nowrap; }
 .text-purple { color: var(--purple-700) !important; }
 .user-dropdown-btn { background: rgba(255,255,255,.18); padding: 6px 16px; border-radius: var(--radius-pill); color: var(--white); backdrop-filter: blur(4px); border: 1px solid rgba(255,255,255,.25); font-size: .85rem; }
 .user-dropdown-btn:hover, .user-dropdown-btn:focus { background: rgba(255,255,255,.25); color: var(--white); }

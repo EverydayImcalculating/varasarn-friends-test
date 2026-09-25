@@ -2,6 +2,8 @@
 
 Status: ready-for-agent
 
+Active follow-up: the **Phone navigation row (2026-09-25 follow-up)** is implemented in the working tree and awaiting review. The original responsive work was completed in `dd8b68d`.
+
 Source: [`audit.md`](audit.md) (2026-09-25, iPhone 16 393×852 and 360×780, through `npm run dev:mock`).
 
 ## Problem Statement
@@ -9,6 +11,7 @@ Source: [`audit.md`](audit.md) (2026-09-25, iPhone 16 393×852 and 360×780, thr
 Most students open Varasarn Close Friends on a phone. The audit found that several screens are unusable or read badly at 393px and 360px wide.
 
 - **Account menu out of reach.** On the Timetable, My Reviews and Admin dashboard screens there is no account menu on a phone. A student can't sign out, open "รีวิวของฉัน", or jump to "แดชบอร์ดผู้ดูแล" without first tapping "หน้าหลัก". The desktop dropdown is hidden below `md`. The mobile account button is only drawn on the catalog.
+- **Timetable button placement (2026-09-25 follow-up).** On the iPhone 16 catalog, the site name fills the first line of the purple navbar and the white "ตารางเรียน" button sits alone at the left of a second line. It looks detached from the other navigation control below the header and makes the purple header unnecessarily tall.
 - **Timetable mostly hidden.** The timetable is a fixed 900px-wide week grid inside a sideways-scrolling box. A phone shows about 08:00–11:00 and nothing says there is more. A class at 13:00 is invisible until the student happens to swipe the grid. This is the biggest usability risk in the audit.
 - **My Reviews action buttons.** The buttons on each review card ("แก้ไข", "ถอนรีวิว"/"เผยแพร่อีกครั้ง", "ดูประวัติการแก้ไข") squeeze into one row. They wrap mid-word into 3-line pills 90–130px tall that no longer look like buttons.
 - **Header buttons.** The Timetable header buttons ("ล้างตาราง", "หน้าหลัก") wrap mid-word into tall narrow boxes.
@@ -24,7 +27,8 @@ Most students open Varasarn Close Friends on a phone. The audit found that sever
 
 Every signed-in screen fits and works at 360–393px with no sideways page scroll. Desktop and tablet layouts stay as they are. The changes are only to layout, markup and styling. Every action a student or admin takes calls the same RPCs and service methods with the same arguments, and shows the same Thai messages, toasts and confirm dialogs as today.
 
-- **Account menu everywhere.** The full-width account button already used on the catalog (name → รีวิวของฉัน / แดชบอร์ดผู้ดูแล / ออกจากระบบ) appears at the top of every signed-in screen on phones, not only the catalog.
+- **Account menu everywhere.** The account button already used on the catalog (name → รีวิวของฉัน / แดชบอร์ดผู้ดูแล / ออกจากระบบ) appears at the top of every signed-in screen on phones, not only the catalog.
+- **Phone navigation row (2026-09-25 follow-up).** Below 768px, keep only the brand in the purple navbar. Immediately below it, place the account menu and the existing "ตารางเรียน" button side by side in one content-width row. The Timetable label and optional "เดิม" badge stay visible. From 768px up, retain the current navbar layout.
 - **Timetable becomes a daily agenda on phones.** Below 768px the week grid is replaced by one card per day that has classes, Monday to Sunday. Each card lists that day's classes in start-time order: the time range, the course code and section, and the instructor, in the same colour as on the grid. Tapping a class opens the same "remove from timetable?" confirmation as tapping a grid block. Days with no classes are left out. From 768px up the grid is unchanged.
 - **Tidy action rows.** On phones, My Reviews card actions become a neat two-row block. "แก้ไข" sits next to "ถอนรีวิว"/"เผยแพร่อีกครั้ง", and "ดูประวัติการแก้ไข" gets its own full-width row. No label breaks mid-word.
 - **Stacked headers.** On phones, the Timetable and My Reviews headers put the title on one row and the buttons in an equal-width row below it.
@@ -95,6 +99,7 @@ The ui-ux-pro-max UX guidelines support this. "Avoid horizontal scrolling" is ra
 47. As a student on any screen at 360px, I want the page never to scroll sideways, so that the layout feels stable.
 48. As a student using a desktop browser with a mouse, I want the catalog, dialogs and screens to look as they do today, so that the phone work doesn't change my experience.
 49. As a signed-out visitor on a phone, I want the login screen to stay as it is, so that the one screen that already works keeps working.
+50. As a signed-in student on a phone, I want the account menu and "ตารางเรียน" button grouped in one row below the brand, so that both navigation controls have a clear place without a stranded button in the purple header.
 
 ## Implementation Decisions
 
@@ -112,7 +117,12 @@ The ui-ux-pro-max UX guidelines support this. "Avoid horizontal scrolling" is ra
 **Account menu (App root)**
 - The existing mobile account menu is shown on every signed-in screen: catalog, Timetable, My Reviews and Admin dashboard. We remove the condition that limited it to the catalog.
 - It keeps its `d-md-none` phone-only visibility, and its open state, items and handlers stay shared with the desktop dropdown.
-- We chose this over adding an icon to the navbar. At 360px the navbar has no room for another control next to the brand and the timetable button, and this reuses a pattern that already works.
+- The account menu reuses the existing catalog control. The follow-up groups it with the Timetable action below the brand because the 360px navbar cannot fit both actions next to the site name.
+
+**Phone navigation row (2026-09-25 follow-up)**
+- Below 768px, the purple navbar contains the home/brand button only. The signed-in page begins with one row containing the existing mobile account menu and the existing Timetable action, with at least an 8px gap. Apply this placement on the catalog, Timetable, My Reviews and Admin dashboard screens.
+- Both controls have a minimum 44px touch height. The row stays within the content width at 393px and 360px. Keep "ตารางเรียน" on one line and show the optional "เดิม" badge without clipping. A long account name may truncate visually, but its full accessible name and menu items remain available.
+- The timetable action keeps its current handler, text, icon, legacy badge, and behavior. Keep the desktop navbar and desktop account dropdown layout unchanged from 768px up. Use the existing classes and tokens in `src/styles.css` for the phone layout.
 
 **Timetable agenda (App root)**
 - A new agenda list renders next to the existing grid. The agenda shows only below `md` and the grid only from `md` up, both through Bootstrap display utilities. No JavaScript media query or resize listener is needed.
@@ -141,7 +151,7 @@ The ui-ux-pro-max UX guidelines support this. "Avoid horizontal scrolling" is ra
 
 **Touch targets**
 - These rules live in one block that applies at ≤575px *or* on coarse pointers, so touch tablets benefit too.
-- **Every `.btn`:** gets a minimum height of `--tap-min` and becomes an inline flex box with centred content, so taller buttons keep their label vertically centred. This covers small buttons, category pills, the timetable navbar button, the account buttons and the admin back link. Bootstrap display utilities still win because they are `!important`.
+- **Every `.btn`:** gets a minimum height of `--tap-min` and becomes an inline flex box with centred content, so taller buttons keep their label vertically centred. This covers small buttons, category pills, the Timetable action, the account buttons and the admin back link. Bootstrap display utilities still win because they are `!important`.
 - **`.btn-close`:** padding sized so the box is `--tap-min` square, and it won't shrink inside flex headers.
 - **Navbar brand, account-menu items and the about-card IG link:** each gets a minimum height of `--tap-min`.
 - **Spacing:** the existing 8px gaps (`gap-2`) already meet the "8px between targets" guideline.
@@ -192,6 +202,7 @@ The ui-ux-pro-max UX guidelines support this. "Avoid horizontal scrolling" is ra
     - no input has a font size under 16px
   - Screenshot the timetable agenda, a My Reviews card, and the Timetable header at 360px.
   - Spot-check that the ≥768px grid and the ≥992px admin sidebar look unchanged.
+  - For the phone navigation follow-up, check the catalog and each signed-in screen at 393×852 and 360×780: the purple header has one brand row, the account and Timetable controls share the row below it, the "เดิม" badge fits when present, both controls are at least 44px tall, and the account dropdown stays within the viewport. Check that opening Timetable still works and that the ≥768px navbar is unchanged.
 - **Gates:** the full unit test suite and the production build (which includes the type check) both pass.
 
 ## Out of Scope
@@ -218,3 +229,5 @@ The ui-ux-pro-max UX guidelines support this. "Avoid horizontal scrolling" is ra
 ## Comments
 
 - **2026-09-25:** Added the phone account menu to every signed-in screen, the day-by-day timetable agenda, stacked personal-screen headers, two-row My Reviews actions, the scrollable import example, and the specified touch, strip, safe-area, modal, and admin layout rules. Added App-level coverage for the mobile account menu/sign-out, agenda ordering/removal, and the unchanged import example. `npm test -- --run` passed (16 files, 94 tests); `npm run build` passed (with the existing chunk-size advisory). Checked the mock app in the in-app browser at 393×852 and 360×780: catalog, review and add-course dialogs, populated and empty Timetable agenda, My Reviews, and all nine admin sections; also checked the contact dialog at 360×780. For the checked screens, the document scroll width matched the viewport, visible buttons met 44px, and inputs were at least 16px. Captured the 360px timetable, My Reviews card, and long-course review header. At 1024px, confirmed the week grid is visible and the admin dashboard retains its 240px sidebar. After review, ensured the Instagram link uses a flex display so its minimum touch height applies, preserved agenda item course colors, and applied safe-area side padding to landscape course-review dialogs. The empty Timetable state was rechecked at both phone sizes: no horizontal page scroll, undersized controls, or undersized inputs.
+- **2026-09-25:** From the supplied iPhone 16 screenshot, identified the Timetable button sitting by itself on the second line of the purple navbar. Added the phone navigation row follow-up and its acceptance checks. This entry specifies future work; no application code changed in this update.
+- **2026-09-25:** Implemented the phone navigation row in `src/App.vue` and `src/styles.css`: the brand stays in the purple navbar, and the account and Timetable controls sit together below it. Verified the catalog, Timetable, My Reviews, and Admin screens at 393×852 and 360×780 in `npm run dev:mock`; both buttons measured 44px, the legacy badge fit, the dropdown stayed within the viewport, and page width matched viewport width. Confirmed the 768px navbar breakpoint and that the Timetable control still opens its screen. `npm test -- --run` and `npm run build` passed; the build reported the existing chunk-size advisory.
