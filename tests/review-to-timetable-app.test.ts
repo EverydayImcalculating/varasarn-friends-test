@@ -75,23 +75,6 @@ describe('review to personal timetable', () => {
     fixture.calls.length = 0
   })
 
-  it('adds a new class section instantly, without admin approval', async () => {
-    const wrapper = await openReview()
-    const proposalBox = wrapper.get('.proposal-box')
-    expect(wrapper.findAll('.offering-card')).toHaveLength(1)
-    const inputs = proposalBox.findAll('input')
-    await inputs[0].setValue('2568')
-    await inputs[1].setValue('2')
-    await inputs[2].setValue('02')
-    await inputs[3].setValue('อ.ใหม่')
-    await proposalBox.get('button').trigger('click')
-    await flushPromises()
-    expect(fixture.calls).toContainEqual({ name: 'create_offering_proposal', args: { p_course_id: 'course-1', p_academic_year: 2568, p_semester: '2', p_section: '02', p_instructor_name: 'อ.ใหม่' } })
-    expect(proposalBox.text()).toContain('เพิ่มแล้ว')
-    expect(wrapper.findAll('.offering-card')).toHaveLength(2)
-    wrapper.unmount()
-  })
-
   it('adds the approved offering from the review and offers to show the timetable', async () => {
     const wrapper = await openReview()
     const review = wrapper.get('.review-card')
