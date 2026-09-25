@@ -175,3 +175,47 @@ h1, h2, h3, h4, h5, h6 { font-family: 'Kanit', sans-serif; }
 .legacy-import .form-check-input:checked { background-color: var(--purple-700); border-color: var(--purple-700); }
 @media (max-width: 575px) { .auth-card { padding: 2rem 1.25rem; } .login-card { padding: 16px; border-radius: 22px; } .login-description { font-size: .95rem; } .container { padding-left: 1rem; padding-right: 1rem; } }
 @media (max-width: 767px) { .container > section:has(> .d-flex h1.h3) > article { display: block; width: 100%; margin-right: 0; } .container > section:has(> h1 + .review-box) { padding: 1rem .5rem 3rem; } .course-review-modal { padding: 1rem .5rem 2rem; } .course-review-header { padding: 16px 18px; } .course-review-header h1 { font-size: 1.1rem; } .course-review-body { padding: 1rem; } }
+
+.admin-dashboard { border-radius: var(--radius-lg); overflow: hidden; box-shadow: var(--shadow-card); }
+.admin-dashboard-header { padding: 18px 24px; }
+.admin-dashboard-header h1 { font-size: 1.3rem; }
+.admin-back-btn { text-decoration: none; opacity: .9; }
+.admin-back-btn:hover, .admin-back-btn:focus { opacity: 1; color: var(--white); }
+.admin-role-pill { background: rgba(255,255,255,.2); color: var(--white); border: 1px solid rgba(255,255,255,.35); border-radius: var(--radius-pill); padding: 5px 14px; font-size: .82rem; font-weight: 600; white-space: nowrap; }
+.admin-layout { display: flex; flex-direction: column; background: var(--purple-50); }
+.admin-nav { display: flex; overflow-x: auto; gap: 4px; padding: 10px 12px; background: var(--white); border-bottom: 1px solid var(--line); -webkit-overflow-scrolling: touch; }
+.admin-nav-group { display: flex; align-items: center; gap: 4px; flex-shrink: 0; }
+.admin-nav-group-label { display: none; }
+.admin-nav-item { display: inline-flex; align-items: center; gap: 6px; min-height: 44px; padding: 8px 16px; border: 1px solid var(--line); border-radius: var(--radius-pill); background: var(--white); color: var(--purple-900); white-space: nowrap; flex-shrink: 0; font-weight: 500; transition: background-color .18s ease, color .18s ease; }
+.admin-nav-item:hover { background: var(--purple-50); }
+.admin-nav-item:focus-visible { outline: 2px solid var(--purple-300); outline-offset: 2px; }
+.admin-nav-item.active { background: var(--purple-100); color: var(--purple-700); border-left: 3px solid var(--purple-700); font-weight: 600; }
+.admin-nav-badge { background: var(--amber-500); color: var(--white); border-radius: var(--radius-pill); font-size: .72rem; font-weight: 700; padding: 1px 7px; margin-left: 2px; }
+.admin-content { padding: 20px; background: var(--purple-50); }
+.admin-section { background: var(--white); border-radius: var(--radius-md); padding: 20px; border: 1px solid var(--line); box-shadow: var(--shadow-card); }
+.admin-section-heading { outline: none; }
+.admin-section-desc { color: var(--ink-600); margin-bottom: 1.25rem; }
+.section-label-sm { display: block; font-size: .82rem; font-weight: 500; color: var(--ink-600); margin-bottom: 4px; }
+.admin-flex-list .list-group-item { flex-wrap: wrap; }
+.admin-merge-row { display: flex; align-items: flex-end; gap: 12px; flex-wrap: wrap; }
+.admin-merge-field { flex: 1 1 240px; }
+.admin-merge-arrow { font-size: 1.4rem; color: var(--purple-600); margin-bottom: 10px; }
+.admin-term-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.admin-term-chip { display: inline-block; }
+.admin-steps { list-style: none; padding: 0; margin: 0; counter-reset: step; display: flex; flex-direction: column; gap: 20px; }
+.admin-steps > li { border: 1px dashed var(--purple-300); border-radius: var(--radius-md); padding: 16px; background: var(--purple-50); }
+.admin-import-totals { font-weight: 600; color: var(--purple-700); margin: 10px 0; }
+.admin-import-table { max-height: 320px; overflow-y: auto; }
+.admin-state-badge { padding: 3px 10px; border-radius: var(--radius-pill); font-weight: 600; font-size: .8rem; }
+.admin-state-visible { background: #e6f7ec; color: #1a7f43; }
+.admin-state-hidden { background: #fff4e0; color: #8a5a00; }
+.admin-state-removed { background: #fdecec; color: #b42318; }
+@media (min-width: 992px) {
+  .admin-layout { flex-direction: row; }
+  .admin-nav { flex-direction: column; align-items: stretch; overflow-x: visible; width: 240px; flex-shrink: 0; border-bottom: none; border-right: 1px solid var(--line); padding: 16px 12px; }
+  .admin-nav-group { flex-direction: column; align-items: stretch; gap: 2px; margin-bottom: 12px; }
+  .admin-nav-group-label { display: block; font-size: .75rem; font-weight: 700; color: var(--ink-600); text-transform: uppercase; letter-spacing: .04em; padding: 6px 12px 4px; }
+  .admin-nav-item { justify-content: flex-start; border-radius: var(--radius-md); border: none; }
+  .admin-content { flex-grow: 1; }
+}
+@media (prefers-reduced-motion: reduce) { .admin-nav-item { transition: none; } }

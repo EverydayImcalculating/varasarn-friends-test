@@ -2,13 +2,14 @@
 import { computed, onMounted, ref, watch } from 'vue'
 import { neon, signInWithGoogle } from './neon'
 import { fetchAllRows, withRange } from './services/pagination'
-import { AdminService, type AcademicPeriod, type BulkOfferingResult, type BulkOfferingRow, type Category, type ManagedCourse, type MergePreview, type ModerationAuditEntry, type ModerationReview, type OfferingImportPreview, type PendingProposal, type RoleAssignment, type VerifiedAccount } from './services/admin'
+import { AdminService, type Category } from './services/admin'
 import { ReviewService, type VisibleReview } from './services/reviews'
 import { TimetableService } from './services/timetable-client'
 import { isValidMeeting, overlaps, type Meeting } from './services/timetable'
 import { ProposalService, type OfferingProposal } from './services/proposals'
 import LegacyTimetableImport from './components/LegacyTimetableImport.vue'
 import { readLegacyTimetable, type LegacySource } from './services/legacy-timetable-import'
+import AdminDashboard from './components/admin/AdminDashboard.vue'
 
 type Course = { id: string; code: string; name_th: string; category_name: string }
 type Offering = { id: string; section: string; academic_year: number; semester: string; instructor_name: string | null }
@@ -44,19 +45,11 @@ const timetable = ref(false); const timetableEntries = ref<TimetableEntry[]>([])
 const myReviewsScreen = ref(false); const myReviews = ref<import('./services/reviews').MyReview[]>([])
 const reviewHistoryId = ref<string | null>(null); const reviewHistory = ref<import('./services/reviews').ReviewRevision[]>([])
 const editingReviewId = ref<string | null>(null); const editReviewRating = ref(5); const editReviewText = ref('')
-const members = ref<RoleAssignment[]>([]); const verifiedAccounts = ref<VerifiedAccount[]>([])
-const categories = ref<Category[]>([]); const categoryName = ref(''); const courseCode = ref(''); const courseName = ref(''); const courseCategoryId = ref('')
-const managedCourses = ref<ManagedCourse[]>([]); const editingCourseId = ref<string | null>(null)
+const categories = ref<Category[]>([]); const courseCode = ref(''); const courseName = ref(''); const courseCategoryId = ref('')
 const courseModalOpen = ref(false)
-const mergeSourceId = ref(''); const mergeTargetId = ref(''); const mergePreview = ref<MergePreview | null>(null)
-const periods = ref<AcademicPeriod[]>([]); const periodYear = ref(new Date().getFullYear() + 543); const periodSemester = ref('1'); const offeringCourseId = ref(''); const offeringYear = ref(new Date().getFullYear() + 543); const offeringSemester = ref('1'); const offeringSection = ref(''); const offeringInstructor = ref(''); const offeringDay = ref(1); const offeringStart = ref('09:00'); const offeringEnd = ref('12:00')
-const editingOfferingId = ref<string | null>(null); const courseOfferings = ref<Offering[]>([])
-const bulkImportText = ref(''); const bulkImportPreview = ref<OfferingImportPreview[]>([]); const bulkImportResult = ref<BulkOfferingResult | null>(null)
-const proposals = ref<PendingProposal[]>([]); const proposalYear = ref(new Date().getFullYear() + 543); const proposalSemester = ref('1'); const proposalSection = ref(''); const proposalInstructor = ref(''); const myProposals = ref<OfferingProposal[]>([])
+const proposalYear = ref(new Date().getFullYear() + 543); const proposalSemester = ref('1'); const proposalSection = ref(''); const proposalInstructor = ref(''); const myProposals = ref<OfferingProposal[]>([])
 const searchTerm = ref(''); const categoryFilter = ref('')
 const reviewRatingFilter = ref(0); const reviewSemesterFilter = ref(''); const reviewYearFilter = ref(0)
-const moderationReviews = ref<ModerationReview[]>([]); const moderationState = ref<'all' | ModerationReview['moderation_state']>('all'); const moderationSearch = ref(''); const moderationReasons = ref<Record<string, string>>({})
-const moderationAuditId = ref<string | null>(null); const moderationAudit = ref<ModerationAuditEntry[]>([])
 const filteredCourses = computed(() => courses.value.filter((course) => {
   const search = searchTerm.value.trim().toLowerCase()
   return (!search || `${course.code} ${course.name_th}`.toLowerCase().includes(search)) && (!categoryFilter.value || course.category_name === categoryFilter.value)
@@ -199,56 +192,20 @@ async function loadAccess() {
   if (apiError) throw new Error(apiError.message)
   accessRole.value = data?.[0]?.role ?? null
 }
-async function openDashboard() {
-  if (!accessRole.value) return
-  dashboard.value = true; error.value = ''
-  if (adminService.value) {
-    try {
-      categories.value = await adminService.value.listCategories()
-      managedCourses.value = await adminService.value.listManageableCourses()
-      periods.value = await adminService.value.listAcademicPeriods()
-      proposals.value = await adminService.value.listPendingOfferingProposals()
-      moderationReviews.value = await adminService.value.listModerationReviews()
-      if (!courseCategoryId.value && categories.value[0]) courseCategoryId.value = categories.value[0].id
-      if (accessRole.value === 'owner') {
-        ;[members.value, verifiedAccounts.value] = await Promise.all([adminService.value.listRoleAssignments(), adminService.value.listVerifiedAccounts()])
-      }
-    } catch (cause) { error.value = cause instanceof Error ? cause.message : 'ไม่สามารถโหลดข้อมูลผู้ดูแลได้' }
-  }
+function openDashboard() { if (!accessRole.value) return; dashboard.value = true; error.value = '' }
+async function onDashboardCatalogChanged() { await loadCatalog(); if (adminService.value) categories.value = await adminService.value.listCategories() }
+function openCourseModal() { courseCode.value = ''; courseName.value = ''; courseCategoryId.value = categories.value[0]?.id ?? ''; error.value = ''; courseModalOpen.value = true }
+async function submitCourseModal() {
+  if (!adminService.value) return
+  try {
+    await adminService.value.createCourse({ code: courseCode.value, nameTh: courseName.value, categoryId: courseCategoryId.value })
+    courseModalOpen.value = false
+    await loadCatalog()
+    showToast('เพิ่มรายวิชาสำเร็จ')
+  } catch (cause) { error.value = cause instanceof Error ? cause.message : 'ไม่สามารถบันทึกรายวิชาได้' }
 }
-async function addCategory() { if (!adminService.value || !categoryName.value.trim()) return; try { await adminService.value.createCategory(categoryName.value); categoryName.value = ''; await openDashboard() } catch (cause) { error.value = cause instanceof Error ? cause.message : 'ไม่สามารถเพิ่มหมวดหมู่ได้' } }
-async function renameCategory(category: Category) { const name = window.prompt('ชื่อหมวดหมู่', category.name); if (!adminService.value || !name?.trim()) return; try { await adminService.value.updateCategory(category.id, name); await Promise.all([openDashboard(), loadCatalog()]) } catch (cause) { error.value = cause instanceof Error ? cause.message : 'ไม่สามารถแก้ไขหมวดหมู่ได้' } }
-async function saveCourse() { if (!adminService.value) return; const draft = { code: courseCode.value, nameTh: courseName.value, categoryId: courseCategoryId.value }; if (editingCourseId.value) await adminService.value.updateCourse(editingCourseId.value, draft); else await adminService.value.createCourse(draft); courseCode.value = ''; courseName.value = ''; editingCourseId.value = null }
-async function addCourse() { const wasEditing = Boolean(editingCourseId.value); try { await saveCourse(); await Promise.all([openDashboard(), loadCatalog()]); showToast(wasEditing ? 'บันทึกรายวิชาสำเร็จ' : 'เพิ่มรายวิชาสำเร็จ') } catch (cause) { error.value = cause instanceof Error ? cause.message : 'ไม่สามารถบันทึกรายวิชาได้' } }
-function openCourseModal() { editingCourseId.value = null; courseCode.value = ''; courseName.value = ''; courseCategoryId.value = categories.value[0]?.id ?? ''; error.value = ''; courseModalOpen.value = true }
-async function submitCourseModal() { try { await saveCourse(); courseModalOpen.value = false; await loadCatalog(); showToast('เพิ่มรายวิชาสำเร็จ') } catch (cause) { error.value = cause instanceof Error ? cause.message : 'ไม่สามารถบันทึกรายวิชาได้' } }
-function editCourse(course: ManagedCourse) { editingCourseId.value = course.id; courseCode.value = course.code; courseName.value = course.name_th; courseCategoryId.value = course.category_id }
-async function archiveCourse(courseId: string) { if (!adminService.value) return; try { await adminService.value.archiveCourse(courseId); await Promise.all([openDashboard(), loadCatalog()]) } catch (cause) { error.value = cause instanceof Error ? cause.message : 'ไม่สามารถปิดใช้งานรายวิชาได้' } }
-async function previewMerge() { if (!adminService.value || !mergeSourceId.value || !mergeTargetId.value) return; try { mergePreview.value = await adminService.value.previewCourseMerge(mergeSourceId.value, mergeTargetId.value) } catch (cause) { mergePreview.value = null; error.value = cause instanceof Error ? cause.message : 'ไม่สามารถตรวจสอบการรวมรายวิชาได้' } }
-async function confirmMerge() { if (!adminService.value || !mergePreview.value || !window.confirm(`รวม ${mergePreview.value.source_code} เข้ากับ ${mergePreview.value.target_code} ใช่หรือไม่?`)) return; try { await adminService.value.mergeCourse(mergeSourceId.value, mergeTargetId.value); mergePreview.value = null; mergeSourceId.value = ''; mergeTargetId.value = ''; await Promise.all([openDashboard(), loadCatalog()]) } catch (cause) { error.value = cause instanceof Error ? cause.message : 'ไม่สามารถรวมรายวิชาได้' } }
-async function addPeriod() { if (!adminService.value) return; try { await adminService.value.createAcademicPeriod(periodYear.value, periodSemester.value); await openDashboard() } catch (cause) { error.value = cause instanceof Error ? cause.message : 'ไม่สามารถเพิ่มภาคการศึกษาได้' } }
-async function addOffering() { if (!adminService.value) return; try { const draft = { courseId: offeringCourseId.value, academicYear: offeringYear.value, semester: offeringSemester.value, section: offeringSection.value, instructorName: offeringInstructor.value, day: offeringDay.value, startsAt: offeringStart.value, endsAt: offeringEnd.value }; if (editingOfferingId.value) await adminService.value.updateOffering(editingOfferingId.value, draft); else await adminService.value.createOffering(draft); offeringSection.value = ''; offeringInstructor.value = ''; editingOfferingId.value = null; await Promise.all([openDashboard(), loadCourseOfferings()]) } catch (cause) { error.value = cause instanceof Error ? cause.message : 'ไม่สามารถบันทึกกลุ่มเรียนได้' } }
-async function loadCourseOfferings() { editingOfferingId.value = null; if (!offeringCourseId.value || !adminService.value) { courseOfferings.value = []; return }; try { courseOfferings.value = await adminService.value.listOfferings(offeringCourseId.value) } catch (cause) { error.value = cause instanceof Error ? cause.message : 'ไม่สามารถโหลดกลุ่มเรียนได้' } }
-async function editOffering(offering: Offering) { editingOfferingId.value = offering.id; offeringYear.value = offering.academic_year; offeringSemester.value = offering.semester; offeringSection.value = offering.section; offeringInstructor.value = offering.instructor_name ?? ''; try { const result = await (neon as any).rpc('list_approved_offering_meetings', { p_offering_id: offering.id }); if (result.error) throw new Error(result.error.message); const meeting = ((result.data ?? []) as Array<{ day_of_week: number; starts_at: string; ends_at: string }>)[0]; if (meeting) { offeringDay.value = meeting.day_of_week; offeringStart.value = timeValue(meeting.starts_at); offeringEnd.value = timeValue(meeting.ends_at) } } catch (cause) { error.value = cause instanceof Error ? cause.message : 'ไม่สามารถโหลดเวลาเรียนได้' } }
-function parseBulkImportRows(): unknown[] { const parsed = JSON.parse(bulkImportText.value); if (!Array.isArray(parsed)) throw new Error('ข้อมูลต้องเป็นรายการ (array) ของกลุ่มเรียน'); return parsed }
-async function previewBulkImport() { if (!adminService.value) return; bulkImportResult.value = null; try { bulkImportPreview.value = await adminService.value.previewOfferingImport(parseBulkImportRows()) } catch (cause) { bulkImportPreview.value = []; error.value = cause instanceof Error ? cause.message : 'ไม่สามารถตรวจสอบข้อมูลนำเข้าได้' } }
-async function confirmBulkImport() { if (!adminService.value) return; try { bulkImportResult.value = await adminService.value.bulkImportOfferings(parseBulkImportRows() as BulkOfferingRow[]); bulkImportPreview.value = []; bulkImportText.value = ''; await Promise.all([openDashboard(), loadCourseOfferings()]) } catch (cause) { error.value = cause instanceof Error ? cause.message : 'ไม่สามารถนำเข้ากลุ่มเรียนได้' } }
 async function submitProposal() { if (!selected.value || !proposalService.value) return; try { await proposalService.value.create(selected.value.id, proposalYear.value, proposalSemester.value, proposalSection.value, proposalInstructor.value); proposalSection.value = ''; proposalInstructor.value = ''; await Promise.all([loadOfferings(selected.value.id), loadMyProposals()]) } catch (cause) { error.value = cause instanceof Error ? cause.message : 'ไม่สามารถเพิ่มกลุ่มเรียนได้' } }
 async function loadMyProposals() { if (!proposalService.value) return; try { myProposals.value = await proposalService.value.listMine() } catch (cause) { error.value = cause instanceof Error ? cause.message : 'ไม่สามารถโหลดข้อเสนอของฉันได้' } }
-async function resolveProposal(id: string, approve: boolean) { if (!adminService.value) return; try { await adminService.value.resolveOfferingProposal(id, approve); await openDashboard() } catch (cause) { error.value = cause instanceof Error ? cause.message : 'ไม่สามารถดำเนินการข้อเสนอได้' } }
-async function loadModerationReviews() { if (!adminService.value) return; try { moderationReviews.value = await adminService.value.listModerationReviews(moderationState.value === 'all' ? undefined : moderationState.value) } catch (cause) { error.value = cause instanceof Error ? cause.message : 'ไม่สามารถโหลดรีวิวสำหรับตรวจสอบได้' } }
-const visibleModerationReviews = computed(() => { const query = moderationSearch.value.trim().toLowerCase(); return !query ? moderationReviews.value : moderationReviews.value.filter((review) => review.text.toLowerCase().includes(query)) })
-function moderationStateLabel(state: ModerationReview['moderation_state']) { return state === 'visible' ? 'เผยแพร่' : state === 'hidden' ? 'ซ่อน' : 'นำออก' }
-async function toggleModerationAudit(reviewId: string) { if (moderationAuditId.value === reviewId) { moderationAuditId.value = null; return }; if (!adminService.value) return; try { moderationAudit.value = await adminService.value.listModerationAudit(reviewId); moderationAuditId.value = reviewId } catch (cause) { error.value = cause instanceof Error ? cause.message : 'ไม่สามารถโหลดประวัติการตรวจสอบได้' } }
-async function moderateReview(id: string, state: ModerationReview['moderation_state']) { if (!adminService.value) return; try { await adminService.value.moderateReview(id, state, moderationReasons.value[id] ?? ''); moderationReasons.value[id] = ''; await loadModerationReviews(); if (moderationAuditId.value === id) moderationAudit.value = await adminService.value.listModerationAudit(id) } catch (cause) { error.value = cause instanceof Error ? cause.message : 'ไม่สามารถเปลี่ยนสถานะรีวิวได้' } }
-async function grantAdministrator(userId: string) {
-  if (!adminService.value) return
-  try { await adminService.value.grantAdministrator(userId); await openDashboard() } catch (cause) { error.value = cause instanceof Error ? cause.message : 'ไม่สามารถกำหนดสิทธิ์ผู้ดูแลได้' }
-}
-async function revokeAdministrator(userId: string) {
-  if (!adminService.value) return
-  try { await adminService.value.revokeAdministrator(userId); await openDashboard() } catch (cause) { error.value = cause instanceof Error ? cause.message : 'ไม่สามารถถอนสิทธิ์ผู้ดูแลได้' }
-}
 async function signOut() {
   await neon?.auth.signOut()
   signedIn.value = false
@@ -260,8 +217,6 @@ async function signOut() {
   dashboard.value = false
   timetable.value = false
   myReviewsScreen.value = false
-  members.value = []
-  verifiedAccounts.value = []
   error.value = ''
   accountMenuOpen.value = false
   contactOpen.value = false
@@ -444,470 +399,14 @@ onMounted(async () => {
           </button>
         </div>
       </div>
-      <section v-if="dashboard" class="review-box">
-        <button class="btn btn-link text-purple p-0 mb-3" @click="dashboard = false">
-          ← กลับหน้ารายวิชา
-        </button>
-        <h1>แดชบอร์ดผู้ดูแล</h1>
-        <p v-if="error" class="text-danger" role="alert">{{ error }}</p>
-        <h2 class="h4 mt-4">เพิ่มหมวดหมู่</h2>
-        <div class="input-group mb-3">
-          <input
-            v-model="categoryName"
-            class="form-control"
-            aria-label="ชื่อหมวดหมู่"
-          /><button class="btn btn-purple" @click="addCategory">เพิ่ม</button>
-        </div>
-        <div class="category-menu">
-          <button
-            v-for="category in categories"
-            :key="category.id"
-            class="btn category-btn btn-outline-purple"
-            @click="renameCategory(category)"
-          >
-            {{ category.name }} · แก้ไข
-          </button>
-        </div>
-        <h2 class="h4">{{ editingCourseId ? "แก้ไขรายวิชา" : "เพิ่มรายวิชา" }}</h2>
-        <div class="row g-2">
-          <div class="col-md-3">
-            <input v-model="courseCode" class="form-control" placeholder="รหัสวิชา" />
-          </div>
-          <div class="col-md-4">
-            <input v-model="courseName" class="form-control" placeholder="ชื่อรายวิชา" />
-          </div>
-          <div class="col-md-3">
-            <select v-model="courseCategoryId" class="form-select">
-              <option
-                v-for="category in categories"
-                :key="category.id"
-                :value="category.id"
-              >
-                {{ category.name }}
-              </option>
-            </select>
-          </div>
-          <div class="col-md-2">
-            <button class="btn btn-purple w-100" @click="addCourse">
-              {{ editingCourseId ? "บันทึก" : "เพิ่มรายวิชา" }}
-            </button>
-          </div>
-        </div>
-        <h2 class="h4 mt-4">รายวิชา</h2>
-        <ul class="list-group">
-          <li
-            v-for="course in managedCourses"
-            :key="course.id"
-            class="list-group-item d-flex justify-content-between align-items-center"
-          >
-            <span
-              ><strong>{{ course.code }}</strong> · {{ course.name_th }}
-              <small class="text-muted"
-                >{{ course.category_name }} · {{ course.status }}</small
-              ></span
-            ><span class="d-flex gap-2"
-              ><button class="btn btn-sm btn-outline-purple" @click="editCourse(course)">
-                แก้ไข</button
-              ><button
-                v-if="course.status === 'approved'"
-                class="btn btn-sm btn-outline-danger"
-                @click="archiveCourse(course.id)"
-              >
-                เก็บเข้าคลัง
-              </button></span
-            >
-          </li>
-        </ul>
-        <h2 class="h4 mt-4">รวมรายวิชาซ้ำ</h2>
-        <div class="row g-2">
-          <div class="col-md-5">
-            <select v-model="mergeSourceId" class="form-select">
-              <option value="">รายวิชาต้นทาง</option>
-              <option
-                v-for="course in managedCourses.filter(
-                  (course) => course.status === 'approved'
-                )"
-                :key="course.id"
-                :value="course.id"
-              >
-                {{ course.code }} · {{ course.name_th }}
-              </option>
-            </select>
-          </div>
-          <div class="col-md-5">
-            <select v-model="mergeTargetId" class="form-select">
-              <option value="">รายวิชาที่เก็บไว้</option>
-              <option
-                v-for="course in managedCourses.filter(
-                  (course) => course.status === 'approved' && course.id !== mergeSourceId
-                )"
-                :key="course.id"
-                :value="course.id"
-              >
-                {{ course.code }} · {{ course.name_th }}
-              </option>
-            </select>
-          </div>
-          <div class="col-md-2">
-            <button class="btn btn-outline-purple w-100" @click="previewMerge">
-              ตรวจสอบ
-            </button>
-          </div>
-        </div>
-        <div v-if="mergePreview" class="review-box">
-          <p class="mb-2">
-            ย้าย {{ mergePreview.offerings_to_move }} กลุ่มเรียน และเก็บ
-            {{ mergePreview.reviews_preserved }} รีวิว จาก
-            <strong>{{ mergePreview.source_code }}</strong> ไปยัง
-            <strong>{{ mergePreview.target_code }}</strong>
-          </p>
-          <button class="btn btn-purple" @click="confirmMerge">ยืนยันการรวม</button>
-        </div>
-        <h2 class="h4 mt-4">ภาคการศึกษาและกลุ่มเรียน</h2>
-        <div class="row g-2 mb-3">
-          <div class="col-md-4">
-            <input
-              v-model.number="periodYear"
-              class="form-control"
-              type="number"
-              aria-label="ปีการศึกษา"
-            />
-          </div>
-          <div class="col-md-5">
-            <input
-              v-model="periodSemester"
-              class="form-control"
-              aria-label="ภาคการศึกษา"
-            />
-          </div>
-          <div class="col-md-3">
-            <button class="btn btn-outline-purple w-100" @click="addPeriod">
-              เพิ่มภาคการศึกษา
-            </button>
-          </div>
-        </div>
-        <p class="text-muted">
-          {{
-            periods
-              .map((period) => `${period.semester}/${period.academic_year}`)
-              .join(" · ") || "ยังไม่มีภาคการศึกษา"
-          }}
-        </p>
-        <div class="row g-2">
-          <div class="col-md-4">
-            <select
-              v-model="offeringCourseId"
-              class="form-select"
-              @change="loadCourseOfferings"
-            >
-              <option value="">รายวิชา</option>
-              <option
-                v-for="course in managedCourses.filter(
-                  (course) => course.status === 'approved'
-                )"
-                :key="course.id"
-                :value="course.id"
-              >
-                {{ course.code }}
-              </option>
-            </select>
-          </div>
-          <div class="col-md-2">
-            <input
-              v-model.number="offeringYear"
-              class="form-control"
-              type="number"
-              aria-label="ปีการศึกษา"
-            />
-          </div>
-          <div class="col-md-2">
-            <input v-model="offeringSemester" class="form-control" placeholder="ภาค" />
-          </div>
-          <div class="col-md-2">
-            <input v-model="offeringSection" class="form-control" placeholder="กลุ่ม" />
-          </div>
-          <div class="col-md-2">
-            <select v-model.number="offeringDay" class="form-select">
-              <option v-for="day in [1, 2, 3, 4, 5, 6, 7]" :key="day" :value="day">
-                {{ dayNames[day] }}
-              </option>
-            </select>
-          </div>
-          <div class="col-md-4">
-            <input
-              v-model="offeringInstructor"
-              class="form-control"
-              placeholder="ผู้สอน"
-            />
-          </div>
-          <div class="col-md-3">
-            <input v-model="offeringStart" class="form-control" type="time" />
-          </div>
-          <div class="col-md-3">
-            <input v-model="offeringEnd" class="form-control" type="time" />
-          </div>
-          <div class="col-md-2">
-            <button class="btn btn-purple w-100" @click="addOffering">
-              {{ editingOfferingId ? "บันทึกกลุ่มเรียน" : "เพิ่มกลุ่มเรียน" }}
-            </button>
-          </div>
-        </div>
-        <div v-if="offeringCourseId" class="mt-2">
-          <p v-if="!courseOfferings.length" class="text-muted">
-            ยังไม่มีกลุ่มเรียนสำหรับรายวิชานี้
-          </p>
-          <ul v-else class="list-group">
-            <li
-              v-for="offering in courseOfferings"
-              :key="offering.id"
-              class="list-group-item d-flex justify-content-between align-items-center"
-            >
-              <span
-                >กลุ่ม {{ offering.section }} · {{ offering.semester }}/{{
-                  offering.academic_year
-                }}<small v-if="offering.instructor_name" class="text-muted">
-                  · {{ offering.instructor_name }}</small
-                ></span
-              ><button
-                class="btn btn-sm btn-outline-purple"
-                @click="editOffering(offering)"
-              >
-                แก้ไข
-              </button>
-            </li>
-          </ul>
-        </div>
-        <h2 class="h4 mt-4">นำเข้ากลุ่มเรียนจำนวนมาก</h2>
-        <p class="text-muted mb-2">
-          วางข้อมูลเป็นรายการ JSON ของกลุ่มเรียน เช่น
-          <code
-            >[{"courseCode":"JC100","academicYear":2569,"semester":"1","section":"2","instructorName":"อาจารย์เอ","dayOfWeek":2,"startsAt":"09:00","endsAt":"11:00"}]</code
-          >
-        </p>
-        <textarea
-          v-model="bulkImportText"
-          class="form-control mb-2"
-          rows="4"
-          aria-label="ข้อมูลนำเข้ากลุ่มเรียน (JSON)"
-          placeholder='[{"courseCode":"JC100","academicYear":2569,"semester":"1","section":"2","instructorName":"อาจารย์เอ","dayOfWeek":2,"startsAt":"09:00","endsAt":"11:00"}]'
-        ></textarea>
-        <div class="d-flex gap-2 mb-3">
-          <button
-            class="btn btn-outline-purple"
-            :disabled="!bulkImportText.trim()"
-            @click="previewBulkImport"
-          >
-            ตรวจสอบ</button
-          ><button
-            class="btn btn-purple"
-            :disabled="!bulkImportPreview.length"
-            @click="confirmBulkImport"
-          >
-            ยืนยันนำเข้า
-          </button>
-        </div>
-        <p v-if="bulkImportResult" class="alert alert-success">
-          นำเข้าสำเร็จ: เพิ่มใหม่ {{ bulkImportResult.created_count }} · แก้ไข
-          {{ bulkImportResult.updated_count }} · ไม่เปลี่ยนแปลง
-          {{ bulkImportResult.existing_count }}
-        </p>
-        <div v-if="bulkImportPreview.length" class="table-responsive mb-3">
-          <table class="table table-sm align-middle">
-            <thead>
-              <tr>
-                <th>แถว</th>
-                <th>วิชา</th>
-                <th>ภาค/ปี</th>
-                <th>กลุ่ม</th>
-                <th>สถานะ</th>
-                <th>หมายเหตุ</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr v-for="row in bulkImportPreview" :key="row.rowNumber">
-                <td>{{ row.rowNumber }}</td>
-                <td>{{ row.courseCode }}</td>
-                <td>{{ row.semester }}/{{ row.academicYear }}</td>
-                <td>{{ row.section }}</td>
-                <td>
-                  <span :class="row.valid ? 'text-success' : 'text-danger'">{{
-                    row.valid
-                      ? row.action === "create"
-                        ? "เพิ่มใหม่"
-                        : row.action === "update"
-                        ? "แก้ไข"
-                        : "ไม่เปลี่ยนแปลง"
-                      : "ผิดพลาด"
-                  }}</span>
-                </td>
-                <td class="text-muted">{{ row.reason }}</td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-        <h2 class="h4 mt-4">ข้อเสนอกลุ่มเรียน</h2>
-        <p v-if="!proposals.length" class="text-muted">ไม่มีข้อเสนอที่รอตรวจสอบ</p>
-        <div v-for="proposal in proposals" :key="proposal.id" class="review-box">
-          <div class="d-flex flex-wrap justify-content-between gap-2 align-items-center">
-            <span
-              ><strong>{{ proposal.course_code }}</strong> · กลุ่ม
-              {{ proposal.section }} · {{ proposal.semester }}/{{ proposal.academic_year
-              }}<small v-if="proposal.instructor_name" class="d-block text-muted">{{
-                proposal.instructor_name
-              }}</small></span
-            ><span class="d-flex gap-2"
-              ><button
-                class="btn btn-sm btn-outline-danger"
-                @click="resolveProposal(proposal.id, false)"
-              >
-                ปฏิเสธ</button
-              ><button
-                class="btn btn-sm btn-purple"
-                @click="resolveProposal(proposal.id, true)"
-              >
-                อนุมัติ
-              </button></span
-            >
-          </div>
-        </div>
-        <h2 class="h4 mt-4">ตรวจสอบรีวิว</h2>
-        <div class="row g-2 mb-3">
-          <div class="col-md-5">
-            <input
-              v-model="moderationSearch"
-              class="form-control"
-              placeholder="ค้นหาข้อความรีวิว"
-              aria-label="ค้นหาข้อความรีวิว"
-            />
-          </div>
-          <div class="col-md-4">
-            <select v-model="moderationState" class="form-select" aria-label="สถานะรีวิว">
-              <option value="all">ทุกสถานะ</option>
-              <option value="visible">เผยแพร่</option>
-              <option value="hidden">ซ่อน</option>
-              <option value="removed">นำออก</option>
-            </select>
-          </div>
-          <div class="col-md-3">
-            <button class="btn btn-outline-purple w-100" @click="loadModerationReviews">
-              ค้นหา
-            </button>
-          </div>
-        </div>
-        <p v-if="!visibleModerationReviews.length" class="text-muted">ไม่พบรีวิว</p>
-        <article
-          v-for="review in visibleModerationReviews"
-          :key="review.id"
-          class="review-box"
-        >
-          <div class="d-flex justify-content-between gap-2">
-            <span class="stars">{{ "★".repeat(review.rating) }}</span
-            ><small
-              >{{ moderationStateLabel(review.moderation_state)
-              }}<span v-if="!review.author_active"> · ผู้เขียนถอนการเผยแพร่</span></small
-            >
-          </div>
-          <p class="mb-2">{{ review.text }}</p>
-          <input
-            v-model="moderationReasons[review.id]"
-            class="form-control mb-2"
-            placeholder="เหตุผลสำหรับการเปลี่ยนสถานะ"
-            :aria-label="`เหตุผลสำหรับรีวิว ${review.id}`"
-          />
-          <div class="d-flex flex-wrap gap-2">
-            <button
-              v-if="review.moderation_state !== 'visible'"
-              class="btn btn-sm btn-outline-purple"
-              @click="moderateReview(review.id, 'visible')"
-            >
-              คืนสถานะ</button
-            ><button
-              v-if="review.moderation_state !== 'hidden'"
-              class="btn btn-sm btn-outline-danger"
-              @click="moderateReview(review.id, 'hidden')"
-            >
-              ซ่อน</button
-            ><button
-              v-if="review.moderation_state !== 'removed'"
-              class="btn btn-sm btn-outline-danger"
-              @click="moderateReview(review.id, 'removed')"
-            >
-              นำออก</button
-            ><button
-              class="btn btn-sm btn-outline-secondary"
-              @click="toggleModerationAudit(review.id)"
-            >
-              <i class="bi bi-clock-history me-1"></i
-              >{{ moderationAuditId === review.id ? "ซ่อนประวัติ" : "ประวัติการตรวจสอบ" }}
-            </button>
-          </div>
-          <div v-if="moderationAuditId === review.id" class="mt-3 border-top pt-3">
-            <p v-if="!moderationAudit.length" class="text-muted mb-0">
-              ยังไม่เคยมีการเปลี่ยนสถานะ
-            </p>
-            <div v-for="entry in moderationAudit" :key="entry.id" class="mb-2">
-              <small class="text-muted d-block"
-                >{{ entry.createdAt }} · {{ entry.actorName }}</small
-              ><span
-                >{{ moderationStateLabel(entry.priorState) }} →
-                {{ moderationStateLabel(entry.newState) }}</span
-              >
-              <p class="mb-0 text-break">{{ entry.reason }}</p>
-            </div>
-          </div>
-        </article>
-        <template v-if="accessRole === 'owner'"
-          ><h2 class="h4 mt-4">ผู้ดูแลระบบ</h2>
-          <p class="text-muted">กำหนดสิทธิ์ให้บัญชี Google ที่ยืนยันแล้วเท่านั้น</p>
-          <div class="review-box">
-            <div
-              v-for="member in members"
-              :key="member.id"
-              class="d-flex justify-content-between align-items-center border-bottom py-2"
-            >
-              <span
-                ><strong>{{ member.name || member.email }}</strong>
-                <small class="text-muted">{{ member.role }}</small></span
-              ><button
-                v-if="member.role === 'administrator'"
-                class="btn btn-sm btn-outline-danger"
-                @click="revokeAdministrator(member.id)"
-              >
-                ถอนสิทธิ์
-              </button>
-            </div>
-            <p v-if="!members.length" class="text-muted mb-0">ยังไม่มีผู้ดูแลเพิ่มเติม</p>
-          </div>
-          <h3 class="h5">บัญชีที่ยืนยันแล้ว</h3>
-          <div class="review-box">
-            <div
-              v-for="account in verifiedAccounts.filter(
-                (account) => !members.some((member) => member.id === account.id)
-              )"
-              :key="account.id"
-              class="d-flex justify-content-between align-items-center border-bottom py-2"
-            >
-              <span>{{ account.name || account.email }}</span
-              ><button
-                class="btn btn-sm btn-purple"
-                @click="grantAdministrator(account.id)"
-              >
-                แต่งตั้งผู้ดูแล
-              </button>
-            </div>
-            <p
-              v-if="
-                !verifiedAccounts.filter(
-                  (account) => !members.some((member) => member.id === account.id)
-                ).length
-              "
-              class="text-muted mb-0"
-            >
-              ไม่มีบัญชีที่รอการแต่งตั้ง
-            </p>
-          </div></template
-        >
-      </section>
+      <AdminDashboard
+        v-if="dashboard && accessRole"
+        :client="(neon as any)"
+        :role="accessRole"
+        @close="dashboard = false"
+        @catalog-changed="onDashboardCatalogChanged"
+        @toast="showToast"
+      />
       <section v-else-if="timetable">
         <div
           class="d-flex justify-content-between align-items-center mb-4 border-bottom pb-3"
