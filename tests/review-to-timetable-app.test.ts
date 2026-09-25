@@ -127,6 +127,14 @@ describe('review to personal timetable', () => {
     wrapper.unmount()
   })
 
+  it('renders an individual rating as five accessible stars', async () => {
+    fixture.reviews = [{ id: 'review-1', rating: 2, text: 'พอใช้', created_at: '2026-09-23T10:00:00Z', section: '320001', semester: '1', academic_year: 2568, instructor_name: 'อ. อ้อม', day_of_week: 4, starts_at: '09:30:00', ends_at: '12:30:00' }]
+    const wrapper = await openReview()
+    expect(wrapper.get('.review-card').text()).toContain('★★☆☆☆')
+    expect(wrapper.get('.review-card').text()).toContain('ให้คะแนน 2 จาก 5 ดาว')
+    wrapper.unmount()
+  })
+
   it('removes a class by clicking its timetable card, only after confirming', async () => {
     fixture.offerings = []
     fixture.reported = [{ review_id: 'review-1', course_code: 'JC232', course_name: 'เทคนิคการถ่ายทำ', section: '320001', day_of_week: 4, starts_at: '09:30:00', ends_at: '12:30:00', instructor_name: 'อ. อ้อม' }]

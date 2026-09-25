@@ -188,6 +188,8 @@ describe('admin dashboard', () => {
     await openDashboard(wrapper)
     await navItem(wrapper, 'รีวิว')!.trigger('click')
     await flushPromises()
+    expect(wrapper.get('.admin-content').text()).toContain('★★★★★')
+    expect(wrapper.get('.admin-content').text()).toContain('ให้คะแนน 5 จาก 5 ดาว')
     fixture.calls.length = 0
 
     await wrapper.get('#admin-review-state').setValue('hidden')

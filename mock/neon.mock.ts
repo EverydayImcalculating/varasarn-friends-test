@@ -33,11 +33,11 @@ let categories = [
 ]
 
 let catalog = [
-  { id: 'course-1', code: 'JC100', name_th: 'หลักการวารสารศาสตร์เบื้องต้นและการสื่อสารมวลชนในยุคดิจิทัล', category_name: 'วิชาแกน' },
-  { id: 'course-2', code: 'JC232', name_th: 'เทคนิคการถ่ายทำและตัดต่อวิดีโอ', category_name: 'วิชาเอก' },
-  { id: 'course-3', code: 'JC301', name_th: 'การเขียนข่าวขั้นสูง', category_name: 'วิชาเอก' },
-  { id: 'course-4', code: 'BJM210', name_th: 'International Media Studies', category_name: 'วิชาโท' },
-  { id: 'course-5', code: 'GE101', name_th: 'ทักษะการใช้ชีวิตในศตวรรษที่ 21', category_name: 'วิชาศึกษาทั่วไป' },
+  { id: 'course-1', code: 'JC100', name_th: 'หลักการวารสารศาสตร์เบื้องต้นและการสื่อสารมวลชนในยุคดิจิทัล', category_name: 'วิชาแกน', review_count: 1, average_rating: 5 },
+  { id: 'course-2', code: 'JC232', name_th: 'เทคนิคการถ่ายทำและตัดต่อวิดีโอ', category_name: 'วิชาเอก', review_count: 2, average_rating: 3.5 },
+  { id: 'course-3', code: 'JC301', name_th: 'การเขียนข่าวขั้นสูง', category_name: 'วิชาเอก', review_count: 0, average_rating: null },
+  { id: 'course-4', code: 'BJM210', name_th: 'International Media Studies', category_name: 'วิชาโท', review_count: 1, average_rating: 2 },
+  { id: 'course-5', code: 'GE101', name_th: 'ทักษะการใช้ชีวิตในศตวรรษที่ 21', category_name: 'วิชาศึกษาทั่วไป', review_count: 0, average_rating: null },
 ]
 
 let managedCourses = catalog.map((course, index) => ({

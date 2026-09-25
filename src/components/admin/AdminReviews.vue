@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from 'vue'
 import { AdminService, type ModerationAuditEntry, type ModerationReview } from '../../services/admin'
+import StarRating from '../StarRating.vue'
 
 const props = defineProps<{ service: AdminService }>()
 const emit = defineEmits<{ toast: [string] }>()
@@ -77,7 +78,7 @@ async function moderate(id: string, state: ModerationReview['moderation_state'])
       <p v-if="!visibleReviews.length" class="text-muted">ไม่พบรีวิว</p>
       <article v-for="review in visibleReviews" :key="review.id" class="review-box">
         <div class="d-flex justify-content-between gap-2">
-          <span class="stars">{{ '★'.repeat(review.rating) }}</span>
+          <StarRating class="stars" :value="review.rating" :label="`ให้คะแนน ${review.rating} จาก 5 ดาว`" />
           <small>
             <span :class="stateBadgeClass(review.moderation_state)">{{ stateLabel(review.moderation_state) }}</span>
             <span v-if="!review.author_active"> · ผู้เขียนถอนการเผยแพร่</span>

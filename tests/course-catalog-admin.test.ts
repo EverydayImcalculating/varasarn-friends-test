@@ -5,7 +5,7 @@ import App from '../src/App.vue'
 const fixture = vi.hoisted(() => ({
   role: null as 'owner' | 'administrator' | null,
   categories: [{ id: 'cat-1', name: 'วิชาศึกษาทั่วไป' }],
-  catalog: [{ id: 'course-1', code: 'JC100', name_th: 'วารสารศาสตร์', category_name: 'วิชาแกน' }],
+  catalog: [{ id: 'course-1', code: 'JC100', name_th: 'วารสารศาสตร์', category_name: 'วิชาแกน' }] as Array<{ id: string; code: string; name_th: string; category_name: string; review_count?: number; average_rating?: number | null }>,
   calls: [] as Array<{ name: string; args?: Record<string, unknown> }>,
 }))
 
@@ -32,12 +32,39 @@ vi.mock('../src/neon', () => ({
 
 describe('add-course button on the catalog page', () => {
   afterEach(() => vi.unstubAllGlobals())
-  beforeEach(() => { fixture.role = null; fixture.calls.length = 0 })
+  beforeEach(() => {
+    fixture.role = null
+    fixture.catalog = [{ id: 'course-1', code: 'JC100', name_th: 'วารสารศาสตร์', category_name: 'วิชาแกน' }]
+    fixture.calls.length = 0
+  })
 
   it('is hidden for a signed-in reader with no admin role', async () => {
     const wrapper = mount(App)
     await flushPromises()
     expect(wrapper.find('.add-course-btn').exists()).toBe(false)
+    wrapper.unmount()
+  })
+
+  it('shows accessible rating summaries and the explicit empty-review state', async () => {
+    fixture.catalog = [
+      { id: 'rated', code: 'JC101', name_th: 'มีรีวิว', category_name: 'วิชาแกน', review_count: 12, average_rating: 4.2 },
+      { id: 'empty', code: 'JC102', name_th: 'ยังว่าง', category_name: 'วิชาแกน', review_count: 0, average_rating: null },
+    ]
+    const wrapper = mount(App)
+    await flushPromises()
+    const cards = wrapper.findAll('.course-card')
+    expect(cards[0].text()).toContain('★★★★☆')
+    expect(cards[0].text()).toContain('4.2 · 12 รีวิว')
+    expect(cards[0].text()).toContain('คะแนนเฉลี่ย 4.2 จาก 5 จาก 12 รีวิว')
+    expect(cards[1].text()).toContain('ยังไม่มีรีวิว')
+    wrapper.unmount()
+  })
+
+  it('renders no rating summary when the catalog row has no rating fields', async () => {
+    const wrapper = mount(App)
+    await flushPromises()
+    expect(wrapper.get('.course-card').text()).not.toContain('ยังไม่มีรีวิว')
+    expect(wrapper.find('.course-rating-summary').exists()).toBe(false)
     wrapper.unmount()
   })
 

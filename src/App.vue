@@ -10,8 +10,9 @@ import { ProposalService, type OfferingProposal } from './services/proposals'
 import LegacyTimetableImport from './components/LegacyTimetableImport.vue'
 import { readLegacyTimetable, type LegacySource } from './services/legacy-timetable-import'
 import AdminDashboard from './components/admin/AdminDashboard.vue'
+import StarRating from './components/StarRating.vue'
 
-type Course = { id: string; code: string; name_th: string; category_name: string }
+type Course = { id: string; code: string; name_th: string; category_name: string; review_count?: number; average_rating?: number | null }
 type Offering = { id: string; section: string; academic_year: number; semester: string; instructor_name: string | null }
 type TimetableEntry = { offering_id: string | null; review_id: string | null; source: 'official' | 'reported'; course_code: string; course_name: string; section: string; day_of_week: number; starts_at: string; ends_at: string; instructor_name: string | null }
 const courses = ref<Course[]>([]); const offerings = ref<Offering[]>([]); const reviews = ref<VisibleReview[]>([])
@@ -555,7 +556,7 @@ onMounted(async () => {
             {{ courseFor(review)!.name_th }}
           </p>
           <div class="d-flex justify-content-between align-items-center mb-3">
-            <span class="stars">{{ "★".repeat(review.rating) }}</span
+            <StarRating class="stars" :value="review.rating" :label="`ให้คะแนน ${review.rating} จาก 5 ดาว`" />
             ><span
               class="badge"
               :class="review.active ? 'selected-badge' : 'bg-light text-dark border'"
@@ -624,7 +625,7 @@ onMounted(async () => {
               </p>
               <div v-for="revision in reviewHistory" :key="revision.id" class="mb-2">
                 <small class="text-muted d-block"
-                  ><span class="stars">{{ "★".repeat(revision.rating) }}</span> ·
+                  ><StarRating class="stars" :value="revision.rating" :label="`ให้คะแนน ${revision.rating} จาก 5 ดาว`" /> ·
                   {{ reviewDateTime(revision.revisedAt) }}</small
                 >
                 <p class="mb-0 text-break">{{ revision.text }}</p>
@@ -727,7 +728,14 @@ onMounted(async () => {
                   ><span class="card-title text-purple fw-bold h5 d-block">{{
                     course.code
                   }}</span
-                  ><span class="card-text d-block">{{ course.name_th }}</span></span
+                  ><span class="card-text d-block">{{ course.name_th }}</span>
+                  <span v-if="course.review_count !== undefined" class="course-rating-summary">
+                    <template v-if="course.review_count === 0">ยังไม่มีรีวิว</template>
+                    <template v-else-if="course.average_rating !== null && course.average_rating !== undefined">
+                      <StarRating class="stars" :value="course.average_rating" :label="`คะแนนเฉลี่ย ${course.average_rating.toFixed(1)} จาก 5 จาก ${course.review_count} รีวิว`" />
+                      <span aria-hidden="true">{{ course.average_rating.toFixed(1) }} · {{ course.review_count }} รีวิว</span>
+                    </template>
+                  </span></span
                 >
               </button>
             </article>
@@ -1011,7 +1019,7 @@ onMounted(async () => {
                   class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3"
                 >
                   <div class="d-flex align-items-center gap-2">
-                    <span class="stars">{{ "★".repeat(review.rating) }}</span
+                    <StarRating class="stars" :value="review.rating" :label="`ให้คะแนน ${review.rating} จาก 5 ดาว`" />
                     ><span
                       v-if="review.semester && review.academicYear"
                       class="offering-term"

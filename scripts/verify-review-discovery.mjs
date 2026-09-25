@@ -24,12 +24,14 @@ try {
     FROM app_private.categories AS c
     CROSS JOIN (VALUES
       ('ZZDISCOVER', 'ทดสอบการค้นพบรีวิว', 'approved'),
+      ('ZZDISCOVEREMPTY', 'ทดสอบรายวิชาที่ไม่มีรีวิว', 'approved'),
       ('ZZDISCOVERARCH', 'ทดสอบรีวิวบนรายวิชาที่เก็บเข้าคลัง', 'archived')
     ) AS seed(code, name_th, status)
     WHERE c.name = 'ทดสอบการค้นพบรีวิว'
   `)
   const courseId = async (code) => (await client.query('SELECT id FROM app_private.courses WHERE code = $1', [code])).rows[0].id
   const activeCourse = await courseId('ZZDISCOVER')
+  const emptyCourse = await courseId('ZZDISCOVEREMPTY')
   const archivedCourse = await courseId('ZZDISCOVERARCH')
 
   const insertReview = (overrides) => {
@@ -69,6 +71,17 @@ try {
   assert.deepEqual(columns, ['academic_year', 'created_at', 'day_of_week', 'ends_at', 'id', 'instructor_name', 'rating', 'section', 'semester', 'starts_at', 'text'].sort())
   assert.ok(!('author_user_id' in visible[0]), 'author identity must never appear in the anonymous projection')
   console.log('PASS: anonymous projection excludes hidden and withdrawn reviews and never exposes author identity')
+
+  const catalog = (await client.query('SELECT * FROM api.list_approved_catalog() WHERE id = $1', [activeCourse])).rows[0]
+  assert.equal(catalog.category_name, 'ทดสอบการค้นพบรีวิว', 'catalog badge must retain the category name')
+  assert.equal(Number(catalog.review_count), 2, 'catalog count must include only active and moderation-visible reviews')
+  assert.equal(Number(catalog.average_rating), 4, 'catalog average must match the same visible review set')
+  const emptyCatalog = (await client.query('SELECT * FROM api.list_approved_catalog() WHERE id = $1', [emptyCourse])).rows[0]
+  assert.equal(Number(emptyCatalog.review_count), 0)
+  assert.equal(emptyCatalog.average_rating, null)
+  const canExecute = (await client.query("SELECT has_function_privilege('authenticated', 'api.list_approved_catalog()', 'EXECUTE') AS allowed")).rows[0].allowed
+  assert.equal(canExecute, true, 'authenticated must retain EXECUTE after the function is recreated')
+  console.log('PASS: catalog rating summary matches visible reviews, represents empty courses as 0/null, and remains executable by authenticated')
 
   // --- Test: rating / semester / academic-year filters. ---
   const byRating = (await client.query('SELECT * FROM api.list_visible_reviews($1::uuid, $2::integer)', [activeCourse, 3])).rows
