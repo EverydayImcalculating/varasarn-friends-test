@@ -15,6 +15,12 @@
   --shadow-card: 0 2px 10px rgba(111, 66, 193, 0.06);
   --shadow-card-hover: 0 16px 32px rgba(111, 66, 193, 0.18);
   --shadow-float: 0 10px 24px rgba(111, 66, 193, 0.3);
+  --tap-min: 44px;
+  --scroll-fade: 24px;
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-right: env(safe-area-inset-right, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+  --safe-left: env(safe-area-inset-left, 0px);
 }
 
 * { box-sizing: border-box; }
@@ -108,7 +114,7 @@ h1, h2, h3, h4, h5, h6 { font-family: 'Kanit', sans-serif; }
 .google-signin-btn:hover { background: #f8f9fa; }
 .google-mark { width: 20px; height: 20px; flex: 0 0 20px; }
 .auth-card { max-width: 560px; padding: 3rem 2rem; background: var(--white); border: 1px solid var(--line); border-radius: var(--radius-lg); box-shadow: var(--shadow-card); }
-.floating-contact-btn { position: fixed; bottom: 22px; right: 22px; z-index: 1050; border-radius: var(--radius-pill); padding: 14px 24px; box-shadow: var(--shadow-float); font-weight: 500; }
+.floating-contact-btn { position: fixed; bottom: calc(22px + var(--safe-bottom)); right: calc(22px + var(--safe-right)); z-index: 1050; border-radius: var(--radius-pill); padding: 14px 24px; box-shadow: var(--shadow-float); font-weight: 500; }
 .container > section:has(> h1 + .review-box) { position: fixed; inset: 0; z-index: 1040; overflow-y: auto; padding: 2rem 1rem 4rem; background: rgba(42,27,71,.48); }
 .container > section:has(> h1 + .review-box) > h1 { max-width: 900px; margin: 0 auto !important; padding: 20px 24px; border-radius: var(--radius-lg) var(--radius-lg) 0 0; background: linear-gradient(135deg, var(--purple-700), var(--purple-600)); color: var(--white); font-size: 1.35rem; }
 .container > section:has(> h1 + .review-box) > .btn-link { max-width: 900px; margin: 0 auto 0 !important; display: block; padding: 16px 24px !important; background: var(--white); border-radius: var(--radius-lg) var(--radius-lg) 0 0; text-align: left; }
@@ -118,22 +124,22 @@ h1, h2, h3, h4, h5, h6 { font-family: 'Kanit', sans-serif; }
 .container > section:has(> .d-flex h1.h3) > article { display: inline-block; vertical-align: top; width: calc(50% - 8px); margin-right: 8px; }
 .container > section:has(> .d-flex h1.h3) > article .review-box { height: 100%; }
 .container > section:has(> .d-flex h1.h3) > article:nth-of-type(even) { margin-right: 0; }
-.contact-panel { position: fixed; inset: 0; z-index: 1051; display: grid; place-items: center; padding: 1rem; background: rgba(42,27,71,.48); }
-.contact-modal-card { width: min(380px, calc(100vw - 32px)); background: var(--white); border: 0; border-radius: var(--radius-lg); box-shadow: 0 20px 40px rgba(0,0,0,.1); overflow: hidden; }
+.contact-panel { position: fixed; inset: 0; z-index: 1051; display: flex; overflow-y: auto; padding: 1rem; background: rgba(42,27,71,.48); }
+.contact-modal-card { width: min(380px, calc(100vw - 32px)); margin: auto; flex: 0 0 auto; background: var(--white); border: 0; border-radius: var(--radius-lg); box-shadow: 0 20px 40px rgba(0,0,0,.1); overflow: hidden; }
 .contact-modal-header { display: flex; justify-content: space-between; align-items: center; padding: 20px 24px; background: var(--purple-50); }
 .contact-modal-body { padding: 1.5rem; text-align: center; }
 .course-modal-body { padding: 1.5rem; }
 .contact-line { background: #00b900; }
 .contact-instagram { background: linear-gradient(45deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%); }
-.confirm-overlay { position: fixed; inset: 0; z-index: 1060; display: grid; place-items: center; padding: 1rem; background: rgba(42,27,71,.48); }
-.confirm-card { width: min(360px, calc(100vw - 32px)); background: var(--white); border: 0; border-radius: var(--radius-lg); box-shadow: 0 20px 40px rgba(0,0,0,.1); padding: 28px 24px; text-align: center; }
+.confirm-overlay { position: fixed; inset: 0; z-index: 1060; display: flex; overflow-y: auto; padding: 1rem; background: rgba(42,27,71,.48); }
+.confirm-card { width: min(360px, calc(100vw - 32px)); margin: auto; flex: 0 0 auto; background: var(--white); border: 0; border-radius: var(--radius-lg); box-shadow: 0 20px 40px rgba(0,0,0,.1); padding: 28px 24px; text-align: center; }
 .confirm-icon { font-size: 2rem; display: block; margin-bottom: 12px; }
 .confirm-message { white-space: pre-line; color: var(--purple-900); margin-bottom: 20px; }
 .confirm-actions { display: flex; gap: 10px; justify-content: center; }
 .confirm-actions .btn { flex: 1; }
 .confirm-card .btn, .contact-modal-card .btn, .course-review-dialog .btn, .review-edit-actions .btn { border-radius: var(--radius-md); }
 .selected-badge { background: #e6f7ec; color: #1a7f43; font-weight: 600; padding: 6px 12px; border-radius: 6px; }
-.toast-banner { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); z-index: 1070; background: var(--purple-700); color: var(--white); padding: 12px 22px; border-radius: var(--radius-pill); box-shadow: 0 10px 24px rgba(0,0,0,.18); font-weight: 500; max-width: calc(100vw - 32px); text-align: center; }
+.toast-banner { position: fixed; top: calc(20px + var(--safe-top)); left: 50%; transform: translateX(-50%); z-index: 1070; background: var(--purple-700); color: var(--white); padding: 12px 22px; border-radius: var(--radius-pill); box-shadow: 0 10px 24px rgba(0,0,0,.18); font-weight: 500; max-width: calc(100vw - 32px); text-align: center; }
 .course-review-modal { position: fixed; inset: 0; z-index: 1040; overflow-y: auto; padding: 2.5rem 1rem 3rem; background: rgba(42, 27, 71, .48); }
 .course-review-dialog { width: min(100%, 1080px); margin: 0 auto; overflow: hidden; border-radius: 24px; background: #f8f9fa; box-shadow: 0 24px 60px rgba(0, 0, 0, .24); }
 .course-review-header { display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding: 20px 28px; background: linear-gradient(135deg, var(--purple-700), var(--purple-600)); color: var(--white); }
@@ -219,3 +225,56 @@ h1, h2, h3, h4, h5, h6 { font-family: 'Kanit', sans-serif; }
   .admin-content { flex-grow: 1; }
 }
 @media (prefers-reduced-motion: reduce) { .admin-nav-item { transition: none; } }
+
+/* Responsive additions for phone and touch layouts. */
+.app-body { padding-bottom: 3rem !important; }
+.admin-code-example { max-width: 100%; overflow-x: auto; padding: .5rem .75rem; border: 1px solid var(--line); border-radius: var(--radius-md); background: var(--white); font-size: .8rem; white-space: pre; }
+.admin-code-example code { white-space: inherit; }
+.admin-content { min-width: 0; }
+.timetable-agenda { display: flex; flex-direction: column; gap: 12px; }
+.timetable-agenda-day { padding: 16px; border: 1px solid var(--line); border-radius: var(--radius-lg); background: var(--white); box-shadow: var(--shadow-card); }
+.timetable-agenda-day-label { margin: 0 0 12px; color: var(--purple-700); font-size: 1.1rem; }
+.timetable-agenda-item { display: grid; grid-template-columns: minmax(88px, auto) 1fr; align-items: center; gap: 12px; width: 100%; min-height: var(--tap-min); margin-top: 8px; padding: 10px 12px; border-top: 1px solid rgba(0,0,0,.05); border-right: 1px solid rgba(0,0,0,.05); border-bottom: 1px solid rgba(0,0,0,.05); border-left-width: 5px; border-radius: 10px; text-align: left; }
+.timetable-agenda-item:first-of-type { margin-top: 0; }
+.timetable-agenda-item small { margin-top: 2px; opacity: .9; }
+.timetable-agenda-time { font-variant-numeric: tabular-nums; white-space: nowrap; }
+
+@media (max-width: 991px) {
+  .admin-nav { mask-image: linear-gradient(to right, #000 calc(100% - var(--scroll-fade)), transparent); }
+  .admin-nav::after { content: ''; flex: 0 0 var(--scroll-fade); }
+}
+@media (max-width: 767px) {
+  .category-menu::after { content: ''; flex: 0 0 var(--scroll-fade); }
+  .category-menu { mask-image: linear-gradient(to right, #000 calc(100% - var(--scroll-fade)), transparent); }
+  .admin-merge-row { flex-direction: column; align-items: stretch; }
+  .admin-merge-field { flex: 1 1 auto; width: 100%; }
+  .admin-merge-arrow { align-self: center; margin: -4px 0; transform: rotate(90deg); }
+}
+@media (max-width: 575px) {
+  .app-body { padding-bottom: calc(3rem + 64px + var(--safe-bottom)) !important; }
+  .screen-header { flex-wrap: wrap; align-items: flex-start !important; gap: 8px; }
+  .screen-header > div:first-child { width: 100%; }
+  .screen-header-actions { display: flex; width: 100%; gap: 8px; }
+  .screen-header-actions > .btn { flex: 1 1 0; white-space: nowrap; }
+  .my-review-footer { align-items: stretch !important; flex-direction: column; gap: 10px; }
+  .my-review-date { display: block; }
+  .my-review-actions { display: grid !important; grid-template-columns: repeat(2, minmax(0, 1fr)); width: 100%; }
+  .my-review-actions .btn { white-space: nowrap; }
+  .my-review-actions .btn:last-child { grid-column: 1 / -1; }
+  .course-review-modal { padding-left: max(.5rem, var(--safe-left)); padding-right: max(.5rem, var(--safe-right)); }
+  .course-review-header { align-items: flex-start; gap: 8px; }
+  .course-review-header h1 { flex: 1 1 auto; min-width: 0; padding-right: 0; font-size: 1rem; line-height: 1.25; }
+  .admin-dashboard-header { padding: 14px 16px; }
+  .admin-content { padding: 14px; }
+  .admin-section { padding: 16px; }
+}
+@media (max-width: 575px), (pointer: coarse) {
+  .btn { min-height: var(--tap-min); display: inline-flex; align-items: center; justify-content: center; }
+  .btn-close { width: var(--tap-min); height: var(--tap-min); padding: 0; flex-shrink: 0; }
+  .navbar-brand, .account-menu-list .dropdown-item, .about-instagram { min-height: var(--tap-min); }
+  .about-instagram { display: inline-flex; align-items: center; }
+  .account-menu-list .dropdown-item { display: flex; align-items: center; }
+}
+@media (orientation: landscape) and (max-height: 575px) {
+  .course-review-modal { padding-left: max(1rem, var(--safe-left)); padding-right: max(1rem, var(--safe-right)); }
+}

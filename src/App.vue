@@ -89,6 +89,7 @@ async function loadTimetable() { if (!timetableService.value) return; timetableE
 async function refreshTimetableAfterImport() { try { await loadTimetable() } catch (cause) { error.value = cause instanceof Error ? cause.message : 'ไม่สามารถโหลดตารางเรียนหลังนำเข้าได้' } }
 async function openTimetable() { timetable.value = true; dashboard.value = false; selected.value = null; error.value = ''; try { await loadTimetable() } catch (cause) { error.value = cause instanceof Error ? cause.message : 'ไม่สามารถโหลดตารางเรียนได้' } }
 const dayNames = ['','จันทร์','อังคาร','พุธ','พฤหัสบดี','ศุกร์','เสาร์','อาทิตย์']
+const timetableAgenda = computed(() => dayNames.slice(1).map((name, index) => ({ day: index + 1, name, entries: timetableEntries.value.filter((entry) => entry.day_of_week === index + 1).sort((a, b) => timeValue(a.starts_at).localeCompare(timeValue(b.starts_at))) })).filter((day) => day.entries.length))
 function timeValue(time: string) { return time.slice(0, 5) }
 function reviewOffering(review: VisibleReview): Offering | null {
   if (!review.section || !review.semester || !review.academicYear) return null
@@ -355,9 +356,8 @@ onMounted(async () => {
         </div>
       </div>
     </section>
-    <section v-else class="container pb-5">
+    <section v-else class="container app-body">
       <div
-        v-if="!dashboard && !timetable && !myReviewsScreen"
         class="mobile-account-menu d-md-none mb-3"
       >
         <button
@@ -409,7 +409,7 @@ onMounted(async () => {
       />
       <section v-else-if="timetable">
         <div
-          class="d-flex justify-content-between align-items-center mb-4 border-bottom pb-3"
+          class="screen-header d-flex justify-content-between align-items-center mb-4 border-bottom pb-3"
         >
           <div>
             <h1 class="h3 text-purple">
@@ -419,7 +419,7 @@ onMounted(async () => {
               My Timetable วางแผนการเรียนของคุณได้ง่ายๆ (คลิกที่วิชาเพื่อลบออก)
             </p>
           </div>
-          <div class="d-flex gap-2">
+          <div class="screen-header-actions d-flex gap-2">
             <button class="btn btn-outline-danger shadow-sm" @click="clearTimetable">
               <i class="bi bi-trash-fill me-1"></i>ล้างตาราง</button
             ><button class="btn btn-purple shadow-sm" @click="timetable = false">
@@ -446,7 +446,15 @@ onMounted(async () => {
           </button>
         </div>
         <template v-else
-          ><div class="timetable-container">
+          ><div class="timetable-agenda d-md-none">
+            <section v-for="day in timetableAgenda" :key="day.day" class="timetable-agenda-day">
+              <h2 class="timetable-agenda-day-label">{{ day.name }}</h2>
+              <button v-for="entry in day.entries" :key="`${entry.offering_id ?? entry.review_id}-${entry.day_of_week}`" class="timetable-agenda-item" :class="courseColor(entry.course_code)" title="คลิกเพื่อลบวิชานี้" @click="confirmRemoveFromTimetable(entry)">
+                <span class="timetable-agenda-time">{{ timeValue(entry.starts_at) }}–{{ timeValue(entry.ends_at) }}</span>
+                <span><strong>{{ entry.course_code }} ({{ entry.section }})</strong><small v-if="entry.instructor_name" class="d-block">{{ entry.instructor_name }}</small></span>
+              </button>
+            </section>
+          </div><div class="timetable-container d-none d-md-block">
             <div class="timetable-grid">
               <div class="time-header-row">
                 <div v-for="hour in 12" :key="hour" class="time-header-slot">
@@ -513,7 +521,7 @@ onMounted(async () => {
       </section>
       <section v-else-if="myReviewsScreen">
         <div
-          class="d-flex justify-content-between align-items-center mb-4 border-bottom pb-3"
+          class="screen-header d-flex justify-content-between align-items-center mb-4 border-bottom pb-3"
         >
           <div>
             <h1 class="h3 text-purple">
@@ -521,9 +529,9 @@ onMounted(async () => {
             </h1>
             <p class="text-muted mb-0">จัดการรีวิวทั้งหมดที่คุณเคยเขียนไว้ที่นี่</p>
           </div>
-          <button class="btn btn-purple shadow-sm" @click="myReviewsScreen = false">
+          <div class="screen-header-actions"><button class="btn btn-purple shadow-sm" @click="myReviewsScreen = false">
             <i class="bi bi-arrow-left-circle-fill me-1"></i>หน้าหลัก
-          </button>
+          </button></div>
         </div>
         <p v-if="error" class="text-danger" role="alert">{{ error }}</p>
         <p v-if="!myReviews.length" class="review-box text-muted">
@@ -566,12 +574,12 @@ onMounted(async () => {
             </div></template
           ><template v-else
             ><p class="text-break">{{ review.text }}</p>
-            <div class="d-flex justify-content-between align-items-end mt-4">
-              <small class="text-muted"
+            <div class="my-review-footer d-flex justify-content-between align-items-end mt-4">
+              <small class="my-review-date text-muted"
                 ><i class="bi bi-clock me-1"></i
                 >{{ reviewDateTime(review.createdAt) }}</small
               >
-              <div class="d-flex gap-2">
+              <div class="my-review-actions d-flex gap-2">
                 <button
                   class="btn btn-sm btn-outline-purple px-3 rounded-pill"
                   @click="beginReviewEdit(review)"
@@ -1061,6 +1069,7 @@ onMounted(async () => {
     <button
       v-if="signedIn"
       class="btn btn-purple floating-contact-btn"
+      aria-label="แจ้งปัญหา/ติดต่อ"
       :aria-expanded="contactOpen"
       @click="contactOpen = !contactOpen"
     >

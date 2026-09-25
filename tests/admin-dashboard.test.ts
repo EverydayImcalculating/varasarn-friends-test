@@ -93,6 +93,7 @@ describe('admin dashboard', () => {
     await flushPromises()
     await openDashboard(wrapper)
 
+    expect(wrapper.find('.mobile-account-menu').exists()).toBe(true)
     expect(navItem(wrapper, 'รายวิชา')!.attributes('aria-current')).toBe('page')
     expect(wrapper.get('.admin-content').text()).toContain('JC100')
     expect(fixture.calls.some((call) => call.name === 'list_role_assignments')).toBe(false)
@@ -217,6 +218,18 @@ describe('admin dashboard', () => {
     await flushPromises()
 
     expect((wrapper.get('textarea[aria-label="ข้อมูลนำเข้ากลุ่มเรียน (JSON)"]').element as HTMLTextAreaElement).value).toBe('[{"draft":true}]')
+    wrapper.unmount()
+  })
+
+  it('renders the unchanged import example in a preformatted code block', async () => {
+    fixture.role = 'administrator'
+    const wrapper = mount(App)
+    await flushPromises()
+    await openDashboard(wrapper)
+    await navItem(wrapper, 'นำเข้ารายวิชา')!.trigger('click')
+    await flushPromises()
+
+    expect(wrapper.get('.admin-code-example code').text()).toBe('[{"courseCode":"JC100","academicYear":2569,"semester":"1","section":"2","instructorName":"อาจารย์เอ","dayOfWeek":2,"startsAt":"09:00","endsAt":"11:00"}]')
     wrapper.unmount()
   })
 })

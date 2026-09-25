@@ -48,7 +48,8 @@ function actionLabel(row: OfferingImportPreview) {
     <ol class="admin-steps">
       <li>
         <h3 class="h6">1. วางข้อมูล</h3>
-        <p class="text-muted mb-2">วางข้อมูลเป็นรายการ JSON ของกลุ่มเรียน เช่น <code>{{ exampleJson }}</code></p>
+        <p class="text-muted mb-2">วางข้อมูลเป็นรายการ JSON ของกลุ่มเรียน เช่น</p>
+        <pre class="admin-code-example"><code>{{ exampleJson }}</code></pre>
         <textarea v-model="bulkImportText" class="form-control" rows="5" aria-label="ข้อมูลนำเข้ากลุ่มเรียน (JSON)" :placeholder="exampleJson"></textarea>
       </li>
       <li>

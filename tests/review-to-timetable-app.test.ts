@@ -34,6 +34,10 @@ vi.mock('../src/neon', () => ({
         fixture.reported = fixture.reported.filter((entry) => entry.review_id !== args?.p_review_id)
         return { data: null, error: null }
       }
+      if (name === 'remove_my_timetable_offering') {
+        fixture.timetable = fixture.timetable.filter((entry) => entry.offering_id !== args?.p_offering_id)
+        return { data: null, error: null }
+      }
       if (name === 'add_my_timetable_offering' || name === 'replace_my_timetable_offering') {
         if (fixture.writeError) return { data: null, error: { message: fixture.writeError } }
         fixture.timetable = [...fixture.timetable.filter((entry) => name !== 'replace_my_timetable_offering' || entry.course_code !== 'JC232'), { offering_id: String(args?.p_offering_id), course_code: 'JC232', course_name: 'เทคนิคการถ่ายทำ', section: '320001', day_of_week: 4, starts_at: '09:30:00', ends_at: '12:30:00', instructor_name: 'อ. อ้อม' }]
@@ -142,6 +146,46 @@ describe('review to personal timetable', () => {
     await flushPromises()
     expect(fixture.calls).toContainEqual({ name: 'remove_my_timetable_review', args: { p_review_id: 'review-1' } })
     expect(wrapper.find('.timetable-course').exists()).toBe(false)
+    wrapper.unmount()
+  })
+
+  it('shows non-empty agenda days in weekday order and classes in start-time order', async () => {
+    fixture.offerings = []
+    fixture.timetable = [
+      { offering_id: 'late', course_code: 'JC300', course_name: 'Late class', section: '3', day_of_week: 4, starts_at: '13:00:00', ends_at: '15:00:00', instructor_name: 'อ. บี' },
+      { offering_id: 'monday', course_code: 'JC100', course_name: 'Monday class', section: '1', day_of_week: 1, starts_at: '09:00:00', ends_at: '11:00:00', instructor_name: null },
+      { offering_id: 'early', course_code: 'JC200', course_name: 'Early class', section: '2', day_of_week: 4, starts_at: '09:00:00', ends_at: '11:00:00', instructor_name: 'อ. เอ' },
+    ]
+    const wrapper = await openReview()
+    await wrapper.get('nav .btn-light').trigger('click')
+    await flushPromises()
+
+    expect(wrapper.find('.mobile-account-menu').exists()).toBe(true)
+    expect(wrapper.findAll('.timetable-agenda-day-label').map((label) => label.text())).toEqual(['จันทร์', 'พฤหัสบดี'])
+    expect(wrapper.findAll('.timetable-agenda-item').map((item) => item.text())).toEqual([
+      expect.stringContaining('09:00–11:00'),
+      expect.stringContaining('09:00–11:00'),
+      expect.stringContaining('13:00–15:00'),
+    ])
+    expect(wrapper.get('.timetable-agenda-day:nth-child(2)').text().indexOf('JC200 (2)')).toBeLessThan(wrapper.get('.timetable-agenda-day:nth-child(2)').text().indexOf('JC300 (3)'))
+    expect(wrapper.get('.timetable-agenda-day:nth-child(2)').text()).toContain('อ. เอ')
+    expect(wrapper.get('.timetable-agenda-day:nth-child(2)').text()).toContain('อ. บี')
+    wrapper.unmount()
+  })
+
+  it('removes a review-reported agenda entry after the same confirmation', async () => {
+    fixture.offerings = []
+    fixture.reported = [{ review_id: 'review-1', course_code: 'JC232', course_name: 'เทคนิคการถ่ายทำ', section: '320001', day_of_week: 4, starts_at: '09:30:00', ends_at: '12:30:00', instructor_name: 'อ. อ้อม' }]
+    const wrapper = await openReview()
+    await wrapper.get('nav .btn-light').trigger('click')
+    await flushPromises()
+    await wrapper.get('.timetable-agenda-item').trigger('click')
+    await flushPromises()
+    expect(wrapper.get('.confirm-message').text()).toContain('JC232')
+    await wrapper.get('.confirm-accept').trigger('click')
+    await flushPromises()
+    expect(fixture.calls).toContainEqual({ name: 'remove_my_timetable_review', args: { p_review_id: 'review-1' } })
+    expect(wrapper.find('.timetable-agenda-item').exists()).toBe(false)
     wrapper.unmount()
   })
 

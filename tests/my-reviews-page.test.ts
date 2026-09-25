@@ -3,6 +3,7 @@ import { flushPromises, mount } from '@vue/test-utils'
 import App from '../src/App.vue'
 
 const fixture = vi.hoisted(() => ({
+  signOut: vi.fn(),
   catalog: [{ id: 'course-1', code: 'JC232', name_th: 'เทคนิคการถ่ายทำ', category_name: 'วิชาเอก' }],
   myReviews: [{ id: 'review-1', course_id: 'course-1', offering_id: null, rating: 4, text: 'สนุกมาก', author_active: true, created_at: '2026-09-23T16:57:55.624035+00:00' }],
   revisions: [{ id: 'rev-1', rating: 3, text: 'เก่ากว่านี้', revised_at: '2026-09-20T10:00:00+00:00' }],
@@ -10,7 +11,7 @@ const fixture = vi.hoisted(() => ({
 
 vi.mock('../src/neon', () => ({
   neon: {
-    auth: { getSession: async () => ({ data: { user: { id: 'user-1', email: 'student@example.com', name: 'Student' } } }), signOut: async () => undefined },
+    auth: { getSession: async () => ({ data: { user: { id: 'user-1', email: 'student@example.com', name: 'Student' } } }), signOut: fixture.signOut },
     rpc: async (name: string, args?: Record<string, unknown>) => {
       if (name === 'list_approved_catalog') return { data: fixture.catalog, error: null }
       if (name === 'list_categories') return { data: [], error: null }
@@ -35,7 +36,18 @@ async function openMyReviews() {
 describe('My Reviews page', () => {
   afterEach(() => vi.unstubAllGlobals())
   beforeEach(() => {
+    fixture.signOut.mockClear()
     fixture.myReviews = [{ id: 'review-1', course_id: 'course-1', offering_id: null, rating: 4, text: 'สนุกมาก', author_active: true, created_at: '2026-09-23T16:57:55.624035+00:00' }]
+  })
+
+  it('keeps the mobile account menu available and signs out from My Reviews', async () => {
+    const wrapper = await openMyReviews()
+    expect(wrapper.find('.mobile-account-menu').exists()).toBe(true)
+    await wrapper.get('.mobile-account-menu > button').trigger('click')
+    await wrapper.get('.mobile-account-menu .text-danger').trigger('click')
+    await flushPromises()
+    expect(fixture.signOut).toHaveBeenCalledOnce()
+    wrapper.unmount()
   })
 
   it('identifies each card by its course instead of repeating a generic title', async () => {
