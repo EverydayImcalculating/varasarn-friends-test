@@ -132,6 +132,7 @@ describe('review to personal timetable', () => {
     const wrapper = await openReview()
     expect(wrapper.get('.review-card').text()).toContain('★★☆☆☆')
     expect(wrapper.get('.review-card').text()).toContain('ให้คะแนน 2 จาก 5 ดาว')
+    expect(wrapper.get('.review-card').text()).not.toContain('>')
     wrapper.unmount()
   })
 

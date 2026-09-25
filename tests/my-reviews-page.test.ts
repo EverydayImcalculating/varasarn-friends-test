@@ -83,6 +83,7 @@ describe('My Reviews page', () => {
     expect(wrapper.text()).toContain('2569')
     expect(wrapper.get('.review-box').text()).toContain('★★★★☆')
     expect(wrapper.get('.review-box').text()).toContain('ให้คะแนน 4 จาก 5 ดาว')
+    expect(wrapper.get('.review-box').text()).not.toContain('>')
     expect(wrapper.text()).toContain('★★★☆☆')
     expect(wrapper.text()).toContain('ให้คะแนน 3 จาก 5 ดาว')
     wrapper.unmount()

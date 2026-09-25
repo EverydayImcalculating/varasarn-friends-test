@@ -557,7 +557,7 @@ onMounted(async () => {
           </p>
           <div class="d-flex justify-content-between align-items-center mb-3">
             <StarRating class="stars" :value="review.rating" :label="`ให้คะแนน ${review.rating} จาก 5 ดาว`" />
-            ><span
+            <span
               class="badge"
               :class="review.active ? 'selected-badge' : 'bg-light text-dark border'"
               >{{ review.active ? "เผยแพร่แล้ว" : "ถอนการเผยแพร่" }}</span
@@ -1020,7 +1020,7 @@ onMounted(async () => {
                 >
                   <div class="d-flex align-items-center gap-2">
                     <StarRating class="stars" :value="review.rating" :label="`ให้คะแนน ${review.rating} จาก 5 ดาว`" />
-                    ><span
+                    <span
                       v-if="review.semester && review.academicYear"
                       class="offering-term"
                       >เทอม {{ review.semester }}/{{ review.academicYear }}</span
