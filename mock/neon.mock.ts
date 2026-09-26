@@ -8,8 +8,7 @@ type RpcResult<T> = { data: T; error: { message: string } | null }
 const sessionUser = { id: 'user-mock-1', name: 'แอดมิน ม็อค', email: 'admin@example.com' }
 
 // Seed a legacy timetable in localStorage (matches the shape read by
-// src/services/legacy-timetable-import.ts) so the "legacy import" panel on the
-// timetable page has something to show.
+// src/services/legacy-timetable-import.ts) for a first-visit migration check.
 try {
   const key = `my_tu_schedule_${sessionUser.email}`
   if (!window.localStorage.getItem(key)) {
@@ -82,10 +81,57 @@ let visibleReviewsByCourse: Record<string, Array<Record<string, unknown>>> = {
 }
 
 let myTimetable: Array<{ offering_id: string; course_code: string; course_name: string; section: string; day_of_week: number; starts_at: string; ends_at: string; instructor_name: string | null }> = [
-  { offering_id: 'offering-1', course_code: 'JC100', course_name: 'หลักการวารสารศาสตร์เบื้องต้นและการสื่อสารมวลชนในยุคดิจิทัล', section: '320001', day_of_week: 4, starts_at: '09:30:00', ends_at: '12:30:00', instructor_name: 'อ. อ้อม' },
   { offering_id: 'offering-5', course_code: 'GE101', course_name: 'ทักษะการใช้ชีวิตในศตวรรษที่ 21', section: '010001', day_of_week: 1, starts_at: '13:00:00', ends_at: '16:00:00', instructor_name: 'อ. เจน' },
 ]
 let myReportedTimetable: Array<{ review_id: string; course_code: string; course_name: string; section: string; day_of_week: number; starts_at: string; ends_at: string; instructor_name: string | null }> = []
+let myLegacyTimetable: Array<{ legacy_entry_id: string; course_code: string; course_name: string; section: string; day_of_week: number; starts_at: string; ends_at: string; instructor_name: string | null }> = []
+const migrationReceipts = new Map<string, Record<string, unknown>>()
+const mockTimetableStorageKey = `__dev_mock_timetable_${sessionUser.email}`
+function persistMockTimetable() {
+  try { window.localStorage.setItem(mockTimetableStorageKey, JSON.stringify({ official: myTimetable, reported: myReportedTimetable, legacy: myLegacyTimetable, receipts: [...migrationReceipts] })) } catch { /* isolated mock persistence is optional */ }
+}
+function restoreMockTimetable() {
+  try {
+    const saved = window.localStorage.getItem(mockTimetableStorageKey)
+    if (!saved) return false
+    const parsed = JSON.parse(saved)
+    if (!Array.isArray(parsed.official) || !Array.isArray(parsed.reported) || !Array.isArray(parsed.legacy) || !Array.isArray(parsed.receipts)) return false
+    myTimetable = parsed.official
+    myReportedTimetable = parsed.reported
+    myLegacyTimetable = parsed.legacy
+    migrationReceipts.clear()
+    for (const [key, receipt] of parsed.receipts) migrationReceipts.set(key, receipt)
+    return true
+  } catch { return false }
+}
+
+// Repeatable fixtures for mobile timetable layout verification. These query
+// options exist only in dev:mock; production never imports this module.
+const previewParams = new URLSearchParams(window.location.search)
+const timetableScenario = previewParams.get('timetable')
+if (previewParams.get('large-text') === '1') document.documentElement.style.fontSize = '200%'
+const applyLayoutScenario = sessionStorage.getItem('mock-timetable-layout-initialized') !== '1'
+if (restoreMockTimetable() && applyLayoutScenario) { sessionStorage.setItem('mock-timetable-layout-initialized', '1') }
+else if (timetableScenario === 'day-view' && applyLayoutScenario) {
+  myTimetable = [
+    { offering_id: 'visual-1', course_code: 'JC100', course_name: 'หลักการวารสารศาสตร์เบื้องต้นและการสื่อสารมวลชนในยุคดิจิทัล', section: '320001', day_of_week: 1, starts_at: '09:00:00', ends_at: '09:30:00', instructor_name: 'อ. อ้อม' },
+    { offering_id: 'visual-1', course_code: 'JC100', course_name: 'หลักการวารสารศาสตร์เบื้องต้นและการสื่อสารมวลชนในยุคดิจิทัล', section: '320001', day_of_week: 1, starts_at: '09:30:00', ends_at: '10:30:00', instructor_name: 'อ. อ้อม' },
+    { offering_id: 'visual-2', course_code: 'JC232', course_name: 'เทคนิคการถ่ายทำและตัดต่อวิดีโอ', section: '320002', day_of_week: 1, starts_at: '11:00:00', ends_at: '13:00:00', instructor_name: null },
+    { offering_id: 'visual-early-late', course_code: 'GE101', course_name: 'ทักษะการใช้ชีวิตในศตวรรษที่ 21', section: '010001', day_of_week: 2, starts_at: '05:30:00', ends_at: '06:00:00', instructor_name: 'อ. เจน' },
+    { offering_id: 'visual-early-late', course_code: 'GE101', course_name: 'ทักษะการใช้ชีวิตในศตวรรษที่ 21', section: '010001', day_of_week: 2, starts_at: '22:00:00', ends_at: '23:30:00', instructor_name: 'อ. เจน' },
+    { offering_id: 'visual-short', course_code: 'JC301', course_name: 'การเขียนข่าวขั้นสูงและการสื่อสารประเด็นสาธารณะด้วยข้อมูล', section: '320001', day_of_week: 3, starts_at: '09:00:00', ends_at: '09:20:00', instructor_name: 'อ. นักเขียน' },
+      { offering_id: 'visual-overlap', course_code: 'JC232', course_name: 'เทคนิคการถ่ายทำและตัดต่อวิดีโอ', section: '320001', day_of_week: 5, starts_at: '09:00:00', ends_at: '11:00:00', instructor_name: 'อ. อ้อม' },
+  ]
+  myReportedTimetable = [
+    { review_id: 'visual-reported', course_code: 'BJM210', course_name: 'International Media Studies', section: '999', day_of_week: 5, starts_at: '10:00:00', ends_at: '12:00:00', instructor_name: 'Prof. Lee' },
+  ]
+} else if ((timetableScenario === 'empty' || timetableScenario === 'error') && applyLayoutScenario) {
+  myTimetable = []
+  myReportedTimetable = []
+  myLegacyTimetable = []
+  migrationReceipts.clear()
+}
+if (applyLayoutScenario) { sessionStorage.setItem('mock-timetable-layout-initialized', '1'); persistMockTimetable() }
 
 let myReviews = [
   { id: 'review-1', course_id: 'course-1', offering_id: 'offering-1', rating: 5, text: 'อาจารย์สอนสนุกมาก เนื้อหาเข้าใจง่าย แนะนำให้ลงเรียนเทอมนี้เลย', author_active: true, created_at: '2026-08-20T10:00:00Z' },
@@ -175,40 +221,86 @@ async function rpc(name: string, args?: Record<string, unknown>): Promise<RpcRes
     case 'list_my_review_revisions':
       return ok(myReviewRevisions[String(args?.p_review_id)] ?? [])
     case 'list_my_timetable':
+      if (timetableScenario === 'error') return { data: null, error: { message: 'โหลดตารางเรียนไม่สำเร็จ (ข้อมูลทดสอบ)' } }
       return ok(myTimetable)
     case 'list_my_reported_timetable':
       return ok(myReportedTimetable)
+    case 'list_my_legacy_timetable':
+      return ok(myLegacyTimetable)
+    case 'migrate_legacy_timetable_entry': {
+      const row = args?.p_entry as Record<string, string>
+      const hash = JSON.stringify([String(row?.code ?? '').replace(/\s+/g, '').toUpperCase(), row?.name, String(row?.sec ?? '').replace(/\s+/g, '').toLowerCase(), row?.teacher, row?.day, row?.start, row?.end])
+      const receiptKey = `${sessionUser.id}:${String(args?.p_migration_version)}:${hash}`
+      const existingReceipt = migrationReceipts.get(receiptKey)
+      if (existingReceipt) return ok({ ...existingReceipt, replayed: true })
+      const day = ['จันทร์', 'อังคาร', 'พุธ', 'พฤหัสบดี', 'ศุกร์', 'เสาร์', 'อาทิตย์'].indexOf(row.day) + 1
+      let outcome = 'conflict'
+      let receipt: Record<string, unknown> = { outcome }
+      if (args?.p_conflicting) outcome = 'conflict'
+      else {
+        const course = catalog.find((item) => item.code.replace(/\s+/g, '').toUpperCase() === String(row.code).replace(/\s+/g, '').toUpperCase())
+        const offering = (offeringsByCourse[course?.id ?? ''] ?? []).find((item) => item.section.replace(/\s+/g, '').toLowerCase() === String(row.sec).replace(/\s+/g, '').toLowerCase())
+        const meeting = offering ? meetingsByOffering[offering.id]?.[0] : undefined
+        const matchesOfficial = course && offering && meeting && meeting.day_of_week === day && meeting.starts_at.slice(0, 5) === row.start && meeting.ends_at.slice(0, 5) === row.end && (offering.instructor_name ?? '') === row.teacher
+        const existingCourse = myTimetable.some((item) => item.course_code === row.code) || myReportedTimetable.some((item) => item.course_code === row.code) || myLegacyTimetable.some((item) => item.course_code === row.code)
+        if (existingCourse) outcome = 'already-present'
+        else if (matchesOfficial && course && offering && meeting && ![...myTimetable, ...myReportedTimetable, ...myLegacyTimetable].some((item) => item.day_of_week === day && item.starts_at < `${row.end}:00` && item.ends_at > `${row.start}:00`)) {
+          myTimetable.push({ offering_id: offering.id, course_code: course.code, course_name: course.name_th, section: offering.section, ...toMeeting(meeting), instructor_name: offering.instructor_name })
+          outcome = 'added-official'
+        } else if (![...myTimetable, ...myReportedTimetable, ...myLegacyTimetable].some((item) => item.day_of_week === day && item.starts_at < `${row.end}:00` && item.ends_at > `${row.start}:00`)) {
+          const legacy_entry_id = `legacy-${Date.now()}-${myLegacyTimetable.length}`
+          myLegacyTimetable.push({ legacy_entry_id, course_code: row.code, course_name: row.name ?? '', section: row.sec, instructor_name: row.teacher || null, day_of_week: day, starts_at: `${row.start}:00`, ends_at: `${row.end}:00` })
+          receipt.legacy_entry_id = legacy_entry_id
+          outcome = 'added-legacy'
+        }
+      }
+      receipt = { ...receipt, outcome }
+      migrationReceipts.set(receiptKey, receipt)
+      persistMockTimetable()
+      return ok(receipt)
+    }
     case 'add_my_timetable_offering': {
       const offeringId = String(args?.p_offering_id)
       const [courseId, offering] = Object.entries(offeringsByCourse).flatMap(([cid, list]) => list.map((item) => [cid, item] as const)).find(([, item]) => item.id === offeringId) ?? []
       const course = catalog.find((item) => item.id === courseId)
       if (offering && course) myTimetable = [...myTimetable, { offering_id: offering.id, course_code: course.code, course_name: course.name_th, section: offering.section, ...toMeeting(meetingsByOffering[offering.id][0]), instructor_name: offering.instructor_name }]
+      persistMockTimetable()
       return ok(null)
     }
     case 'replace_my_timetable_offering': {
       const offeringId = String(args?.p_offering_id)
       const [courseId, offering] = Object.entries(offeringsByCourse).flatMap(([cid, list]) => list.map((item) => [cid, item] as const)).find(([, item]) => item.id === offeringId) ?? []
       const course = catalog.find((item) => item.id === courseId)
-      if (offering && course) myTimetable = [...myTimetable.filter((entry) => entry.course_code !== course.code), { offering_id: offering.id, course_code: course.code, course_name: course.name_th, section: offering.section, ...toMeeting(meetingsByOffering[offering.id][0]), instructor_name: offering.instructor_name }]
+      if (offering && course) { myTimetable = [...myTimetable.filter((entry) => entry.course_code !== course.code), { offering_id: offering.id, course_code: course.code, course_name: course.name_th, section: offering.section, ...toMeeting(meetingsByOffering[offering.id][0]), instructor_name: offering.instructor_name }]; myLegacyTimetable = myLegacyTimetable.filter((entry) => entry.course_code !== course.code) }
+      persistMockTimetable()
       return ok(null)
     }
     case 'remove_my_timetable_offering':
       myTimetable = myTimetable.filter((entry) => entry.offering_id !== args?.p_offering_id)
+      persistMockTimetable()
+      return ok(null)
+    case 'remove_my_legacy_timetable_entry':
+      myLegacyTimetable = myLegacyTimetable.filter((entry) => entry.legacy_entry_id !== args?.p_legacy_entry_id)
+      persistMockTimetable()
       return ok(null)
     case 'add_my_timetable_review': {
       const reviewId = String(args?.p_review_id)
       const review = Object.values(visibleReviewsByCourse).flat().find((item) => item.id === reviewId) as Record<string, unknown> | undefined
       const course = Object.entries(visibleReviewsByCourse).find(([, list]) => list.some((item) => item.id === reviewId))
       const courseInfo = course ? catalog.find((item) => item.id === course[0]) : undefined
-      if (review && courseInfo) myReportedTimetable = [...myReportedTimetable, { review_id: reviewId, course_code: courseInfo.code, course_name: courseInfo.name_th, section: String(review.section ?? ''), day_of_week: Number(review.day_of_week), starts_at: String(review.starts_at), ends_at: String(review.ends_at), instructor_name: (review.instructor_name as string) ?? null }]
+      if (review && courseInfo) { myReportedTimetable = [...myReportedTimetable, { review_id: reviewId, course_code: courseInfo.code, course_name: courseInfo.name_th, section: String(review.section ?? ''), day_of_week: Number(review.day_of_week), starts_at: String(review.starts_at), ends_at: String(review.ends_at), instructor_name: (review.instructor_name as string) ?? null }]; myLegacyTimetable = myLegacyTimetable.filter((entry) => entry.course_code !== courseInfo.code) }
+      persistMockTimetable()
       return ok(null)
     }
     case 'remove_my_timetable_review':
       myReportedTimetable = myReportedTimetable.filter((entry) => entry.review_id !== args?.p_review_id)
+      persistMockTimetable()
       return ok(null)
     case 'clear_my_timetable':
       myTimetable = []
       myReportedTimetable = []
+      myLegacyTimetable = []
+      persistMockTimetable()
       return ok(null)
     case 'list_my_offering_proposals':
       return ok(myProposals)

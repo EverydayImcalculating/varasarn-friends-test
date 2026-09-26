@@ -260,6 +260,13 @@
       "when": 1790290000000,
       "tag": "0036_catalog_review_rating_summary",
       "breakpoints": true
+    },
+    {
+      "idx": 37,
+      "version": "7",
+      "when": 1790425543400,
+      "tag": "0037_silent_legacy_timetable_migration",
+      "breakpoints": true
     }
   ]
 }

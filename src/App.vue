@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted, ref, watch } from 'vue'
+import { computed, onMounted, onBeforeUnmount, ref, watch } from 'vue'
 import { neon, signInWithGoogle } from './neon'
 import { fetchAllRows, withRange } from './services/pagination'
 import { AdminService, type Category } from './services/admin'
@@ -7,14 +7,13 @@ import { ReviewService, type VisibleReview } from './services/reviews'
 import { TimetableService } from './services/timetable-client'
 import { isValidMeeting, overlaps, type Meeting } from './services/timetable'
 import { ProposalService, type OfferingProposal } from './services/proposals'
-import LegacyTimetableImport from './components/LegacyTimetableImport.vue'
-import { readLegacyTimetable, type LegacySource } from './services/legacy-timetable-import'
+import { migrateLegacyTimetable, readLegacyTimetable, type LegacyClass } from './services/legacy-timetable-import'
 import AdminDashboard from './components/admin/AdminDashboard.vue'
 import StarRating from './components/StarRating.vue'
 
 type Course = { id: string; code: string; name_th: string; category_name: string; review_count?: number; average_rating?: number | null }
 type Offering = { id: string; section: string; academic_year: number; semester: string; instructor_name: string | null }
-type TimetableEntry = { offering_id: string | null; review_id: string | null; source: 'official' | 'reported'; course_code: string; course_name: string; section: string; day_of_week: number; starts_at: string; ends_at: string; instructor_name: string | null }
+type TimetableEntry = { offering_id: string | null; review_id: string | null; legacy_entry_id?: string | null; source: 'official' | 'reported' | 'legacy'; course_code: string; course_name: string; section: string; day_of_week: number; starts_at: string; ends_at: string; instructor_name: string | null }
 const courses = ref<Course[]>([]); const offerings = ref<Offering[]>([]); const reviews = ref<VisibleReview[]>([])
 const offeringMeetings = ref<Record<string, Meeting[]>>({})
 const selected = ref<Course | null>(null); const rating = ref(5); const text = ref(''); const error = ref(''); const loading = ref(true); const signedIn = ref(false); const publishing = ref(false)
@@ -41,8 +40,12 @@ const proposalService = computed(() => neon ? new ProposalService(neon as any) :
 const accessRole = ref<'owner' | 'administrator' | null>(null); const dashboard = ref(false)
 const accountMenuOpen = ref(false); const contactOpen = ref(false); const displayName = ref('บัญชีของฉัน')
 const signedInEmail = ref('')
-const legacySource = ref<LegacySource>({ kind: 'none' })
+let activeMigrationUserId: string | null = null
+let migrationPromise: Promise<void> | null = null
+let retryEntries: LegacyClass[] = []
 const timetable = ref(false); const timetableEntries = ref<TimetableEntry[]>([])
+const timetableLoading = ref(false)
+const timetableActive = computed(() => signedIn.value && timetable.value && !dashboard.value)
 const myReviewsScreen = ref(false); const myReviews = ref<import('./services/reviews').MyReview[]>([])
 const reviewHistoryId = ref<string | null>(null); const reviewHistory = ref<import('./services/reviews').ReviewRevision[]>([])
 const editingReviewId = ref<string | null>(null); const editReviewRating = ref(5); const editReviewText = ref('')
@@ -86,11 +89,91 @@ async function loadReviews(courseId = selected.value?.id) {
     reviews.value = await service.value.listVisible(courseId, { rating: reviewRatingFilter.value || undefined, semester: reviewSemesterFilter.value || undefined, academicYear: reviewYearFilter.value || undefined })
   } catch (cause) { error.value = cause instanceof Error ? cause.message : 'ไม่สามารถโหลดรีวิวได้' }
 }
-async function loadTimetable() { if (!timetableService.value) return; timetableEntries.value = await timetableService.value.list() as TimetableEntry[] }
-async function refreshTimetableAfterImport() { try { await loadTimetable() } catch (cause) { error.value = cause instanceof Error ? cause.message : 'ไม่สามารถโหลดตารางเรียนหลังนำเข้าได้' } }
-async function openTimetable() { timetable.value = true; dashboard.value = false; selected.value = null; error.value = ''; try { await loadTimetable() } catch (cause) { error.value = cause instanceof Error ? cause.message : 'ไม่สามารถโหลดตารางเรียนได้' } }
+async function loadTimetable() {
+  if (!timetableService.value) return
+  timetableLoading.value = true
+  try { timetableEntries.value = await timetableService.value.list() as TimetableEntry[] }
+  finally { timetableLoading.value = false }
+}
+async function runLegacyMigration(userId: string, entries: LegacyClass[]) {
+  if (!neon || activeMigrationUserId !== userId || migrationPromise) return migrationPromise
+  migrationPromise = (async () => {
+    let pending = entries.filter((entry) => !entry.invalidReason)
+    const delays = [0, 1000, 5000, 30000]
+    for (const delay of delays) {
+      if (delay && navigator.onLine) {
+        await new Promise<void>((resolve) => {
+          const timer = setTimeout(finish, delay)
+          function finish() {
+            clearTimeout(timer)
+            window.removeEventListener('online', finish)
+            resolve()
+          }
+          window.addEventListener('online', finish, { once: true })
+        })
+      }
+      if (activeMigrationUserId !== userId || !pending.length || !navigator.onLine) break
+      const outcomes = await migrateLegacyTimetable(neon as any, pending)
+      pending = outcomes.filter((result) => result.outcome === 'retryable').map((result) => result.entry)
+      retryEntries = pending
+      if (outcomes.some((result) => result.outcome === 'added-official' || result.outcome === 'added-legacy' || result.outcome === 'already-present') && timetable.value) {
+        await loadTimetable().catch(() => undefined)
+      }
+    }
+  })().catch(() => undefined).finally(() => { migrationPromise = null })
+  return migrationPromise
+}
+function retryLegacyMigrationWhenOnline() {
+  if (activeMigrationUserId && retryEntries.length) void runLegacyMigration(activeMigrationUserId, retryEntries)
+}
+window.addEventListener('online', retryLegacyMigrationWhenOnline)
+onBeforeUnmount(() => window.removeEventListener('online', retryLegacyMigrationWhenOnline))
+function bangkokWeekday() {
+  const day = new Intl.DateTimeFormat('en-US', { timeZone: 'Asia/Bangkok', weekday: 'short' }).format(new Date())
+  return ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].indexOf(day) + 1
+}
 const dayNames = ['','จันทร์','อังคาร','พุธ','พฤหัสบดี','ศุกร์','เสาร์','อาทิตย์']
-const timetableAgenda = computed(() => dayNames.slice(1).map((name, index) => ({ day: index + 1, name, entries: timetableEntries.value.filter((entry) => entry.day_of_week === index + 1).sort((a, b) => timeValue(a.starts_at).localeCompare(timeValue(b.starts_at))) })).filter((day) => day.entries.length))
+const shortDayNames = ['จ.', 'อ.', 'พ.', 'พฤ.', 'ศ.', 'ส.', 'อา.']
+const selectedTimetableDay = ref(bangkokWeekday())
+function showTimetable() {
+  selectedTimetableDay.value = bangkokWeekday()
+  timetable.value = true; dashboard.value = false; myReviewsScreen.value = false
+  selected.value = null; accountMenuOpen.value = false; error.value = ''
+}
+function showCatalog() {
+  timetable.value = false; dashboard.value = false; myReviewsScreen.value = false
+  selected.value = null; accountMenuOpen.value = false; error.value = ''
+}
+async function openTimetable() { showTimetable(); try { await loadTimetable() } catch (cause) { error.value = cause instanceof Error ? cause.message : 'ไม่สามารถโหลดตารางเรียนได้' } }
+const selectedDayEntries = computed(() => timetableEntries.value
+  .filter((entry) => entry.day_of_week === selectedTimetableDay.value)
+  .sort((a, b) => a.starts_at.localeCompare(b.starts_at) || a.ends_at.localeCompare(b.ends_at) || a.course_code.localeCompare(b.course_code)))
+function timetableMinutes(time: string) { return Number(time.slice(0, 2)) * 60 + Number(time.slice(3, 5)) }
+function timetableDuration(entry: TimetableEntry) { return timetableMinutes(entry.ends_at) - timetableMinutes(entry.starts_at) }
+const timetableListFallback = computed(() => {
+  let previousEnd = -1
+  for (const entry of selectedDayEntries.value) {
+    if (timetableDuration(entry) < 30 || timetableMinutes(entry.starts_at) < previousEnd) return true
+    previousEnd = Math.max(previousEnd, timetableMinutes(entry.ends_at))
+  }
+  return false
+})
+const timelineStart = computed(() => Math.min(480, ...selectedDayEntries.value.map((entry) => Math.floor(timetableMinutes(entry.starts_at) / 60) * 60)))
+const timelineEnd = computed(() => Math.max(1200, ...selectedDayEntries.value.map((entry) => Math.ceil(timetableMinutes(entry.ends_at) / 60) * 60)))
+const timelineHours = computed(() => Array.from({ length: (timelineEnd.value - timelineStart.value) / 60 + 1 }, (_, index) => timelineStart.value / 60 + index))
+function timetableMeetingKey(entry: TimetableEntry) { return `${entry.source}-${entry.offering_id ?? entry.review_id ?? entry.legacy_entry_id}-${entry.day_of_week}-${entry.starts_at}-${entry.ends_at}` }
+function timetableDayStyle(entry: TimetableEntry) {
+  return {
+    top: `calc(var(--timetable-hour-height) * ${(timetableMinutes(entry.starts_at) - timelineStart.value) / 60} + 4px)`,
+    height: `calc(var(--timetable-hour-height) * ${timetableDuration(entry) / 60} - 8px)`,
+  }
+}
+function timetableEntryLabel(entry: TimetableEntry) {
+  return `${entry.course_code} กลุ่ม ${entry.section} ${entry.course_name} เวลา ${timeValue(entry.starts_at)}–${timeValue(entry.ends_at)}${entry.instructor_name ? ` ${entry.instructor_name}` : ''} ลบออกจากตารางเรียน`
+}
+function returnToCatalog() { showCatalog() }
+const timetableAccountButton = ref<HTMLButtonElement | null>(null)
+function closeTimetableAccountMenu() { accountMenuOpen.value = false; timetableAccountButton.value?.focus() }
 function timeValue(time: string) { return time.slice(0, 5) }
 function reviewOffering(review: VisibleReview): Offering | null {
   if (!review.section || !review.semester || !review.academicYear) return null
@@ -125,7 +208,7 @@ async function addReviewToTimetable(review: VisibleReview) {
     await loadTimetable()
     showToast(`เพิ่ม ${selected.value.code} ลงตารางเรียนแล้ว`)
     if (!(await showConfirm('ต้องการไปดูหน้าตารางเรียนของคุณตอนนี้เลยไหม?', 'ไปที่ตารางเรียน', 'ปิด', 'success'))) return
-    timetable.value = true; selected.value = null
+    showTimetable()
   } catch (cause) { error.value = cause instanceof Error ? cause.message : 'ไม่สามารถเพิ่มลงตารางเรียนได้' }
 }
 function reviewDate(value: string): string { const date = new Date(value); return Number.isNaN(date.getTime()) ? '' : date.toLocaleDateString('th-TH') }
@@ -166,10 +249,10 @@ async function addToTimetable(offering: Offering, review?: VisibleReview) {
     await loadTimetable()
     showToast(`เพิ่ม ${selected.value.code} ลงตารางเรียนแล้ว`)
     if (review && !(await showConfirm('ต้องการไปดูหน้าตารางเรียนของคุณตอนนี้เลยไหม?', 'ไปที่ตารางเรียน', 'ปิด', 'success'))) return
-    timetable.value = true; selected.value = null
+    showTimetable()
   } catch (cause) { error.value = cause instanceof Error ? cause.message : 'ไม่สามารถเพิ่มลงตารางเรียนได้' }
 }
-async function removeFromTimetable(entry: TimetableEntry) { if (!timetableService.value) return; try { if (entry.source === 'reported' && entry.review_id) await timetableService.value.removeReview(entry.review_id); else if (entry.offering_id) await timetableService.value.remove(entry.offering_id); await loadTimetable() } catch (cause) { error.value = cause instanceof Error ? cause.message : 'ไม่สามารถลบรายวิชาได้' } }
+async function removeFromTimetable(entry: TimetableEntry) { if (!timetableService.value) return; try { if (entry.source === 'reported' && entry.review_id) await timetableService.value.removeReview(entry.review_id); else if (entry.source === 'legacy' && entry.legacy_entry_id) await timetableService.value.removeLegacy(entry.legacy_entry_id); else if (entry.offering_id) await timetableService.value.remove(entry.offering_id); await loadTimetable() } catch (cause) { error.value = cause instanceof Error ? cause.message : 'ไม่สามารถลบรายวิชาได้' } }
 async function confirmRemoveFromTimetable(entry: TimetableEntry) { if (!(await showConfirm(`ต้องการลบวิชา ${entry.course_code} ออกจากตารางเรียนใช่ไหม?`, 'ลบ', 'ยกเลิก', 'warning'))) return; await removeFromTimetable(entry) }
 async function clearTimetable() { if (!timetableService.value || !window.confirm('ต้องการล้างตารางเรียนทั้งหมดใช่หรือไม่?')) return; try { await timetableService.value.clear(); await loadTimetable() } catch (cause) { error.value = cause instanceof Error ? cause.message : 'ไม่สามารถล้างตารางเรียนได้' } }
 async function openMyReviews() { if (!service.value) return; myReviewsScreen.value = true; timetable.value = false; dashboard.value = false; error.value = ''; try { myReviews.value = await service.value.listMine() } catch (cause) { error.value = cause instanceof Error ? cause.message : 'ไม่สามารถโหลดรีวิวของฉันได้' } }
@@ -224,7 +307,8 @@ async function signOut() {
   contactOpen.value = false
   displayName.value = 'บัญชีของฉัน'
   signedInEmail.value = ''
-  legacySource.value = { kind: 'none' }
+  activeMigrationUserId = null
+  retryEntries = []
 }
 onMounted(async () => {
   if (!neon) { loading.value = false; return }
@@ -235,11 +319,14 @@ onMounted(async () => {
       const user = session.data.user
       displayName.value = user.name || user.email?.split('@')[0] || 'บัญชีของฉัน'
       signedInEmail.value = user.email ?? ''
-      if (signedInEmail.value) {
-        try { legacySource.value = readLegacyTimetable(signedInEmail.value, window.localStorage) }
-        catch { legacySource.value = { kind: 'error', message: 'อ่านข้อมูลตารางเรียนเดิมจากเบราว์เซอร์ไม่ได้' } }
-      }
+      activeMigrationUserId = user.id
       await Promise.all([loadCatalog(), loadAccess(), adminService.value?.listCategories().then((items) => { categories.value = items })])
+      if (signedInEmail.value && activeMigrationUserId === user.id) {
+        try {
+          const source = readLegacyTimetable(signedInEmail.value, window.localStorage)
+          if (source.kind === 'found') { retryEntries = source.entries.filter((entry) => !entry.invalidReason); void runLegacyMigration(user.id, retryEntries) }
+        } catch { /* Legacy data is optional; the signed-in app stays usable. */ }
+      }
     } else loading.value = false
   } catch (cause) {
     signedIn.value = false
@@ -250,7 +337,7 @@ onMounted(async () => {
 </script>
 
 <template>
-  <main>
+  <main :class="{ 'mobile-timetable-screen': timetableActive }">
     <nav v-if="signedIn" class="navbar navbar-custom navbar-dark mb-4">
       <div class="container d-flex justify-content-between align-items-center">
         <button
@@ -269,11 +356,7 @@ onMounted(async () => {
             class="btn btn-sm btn-light text-purple fw-bold rounded-pill px-3 shadow-sm"
             @click="openTimetable"
           >
-            <i class="bi bi-grid-3x3-gap-fill me-1"></i>ตารางเรียน<span
-              v-if="legacySource.kind === 'found'"
-              class="badge bg-warning text-dark ms-1"
-              >เดิม</span
-            >
+            <i class="bi bi-grid-3x3-gap-fill me-1"></i>ตารางเรียน
           </button>
           <div class="account-menu d-none d-md-block">
             <button
@@ -358,7 +441,7 @@ onMounted(async () => {
       </div>
     </section>
     <section v-else class="container app-body">
-      <div class="mobile-navigation-row d-md-none mb-3">
+      <div v-if="!timetableActive" class="mobile-navigation-row d-md-none mb-3">
         <div class="mobile-account-menu">
           <button
             class="btn user-dropdown-btn dropdown-toggle w-100 text-start d-flex justify-content-between align-items-center"
@@ -403,11 +486,7 @@ onMounted(async () => {
           class="btn btn-sm btn-light text-purple fw-bold rounded-pill px-3 shadow-sm mobile-timetable-btn"
           @click="openTimetable"
         >
-          <i class="bi bi-grid-3x3-gap-fill me-1"></i>ตารางเรียน<span
-            v-if="legacySource.kind === 'found'"
-            class="badge bg-warning text-dark ms-1"
-            >เดิม</span
-          >
+          <i class="bi bi-grid-3x3-gap-fill me-1"></i>ตารางเรียน
         </button>
       </div>
       <AdminDashboard
@@ -420,7 +499,7 @@ onMounted(async () => {
       />
       <section v-else-if="timetable">
         <div
-          class="screen-header d-flex justify-content-between align-items-center mb-4 border-bottom pb-3"
+          class="screen-header d-none d-md-flex justify-content-between align-items-center mb-4 border-bottom pb-3"
         >
           <div>
             <h1 class="h3 text-purple">
@@ -433,39 +512,128 @@ onMounted(async () => {
           <div class="screen-header-actions d-flex gap-2">
             <button class="btn btn-outline-danger shadow-sm" @click="clearTimetable">
               <i class="bi bi-trash-fill me-1"></i>ล้างตาราง</button
-            ><button class="btn btn-purple shadow-sm" @click="timetable = false">
+            ><button class="btn btn-purple shadow-sm" @click="returnToCatalog">
               <i class="bi bi-arrow-left-circle-fill me-1"></i>หน้าหลัก
             </button>
           </div>
         </div>
-        <p v-if="error" class="text-danger" role="alert">{{ error }}</p>
-        <LegacyTimetableImport
-          v-if="signedInEmail && neon"
-          :email="signedInEmail"
-          :catalog="courses"
-          :client="neon as any"
-          @imported="refreshTimetableAfterImport"
-        />
-        <div v-if="!timetableEntries.length" class="review-box text-center py-5">
+        <header class="timetable-mobile-header d-md-none">
+          <div class="timetable-mobile-bar">
+            <button class="timetable-mobile-icon" aria-label="กลับหน้ารายวิชา" @click="returnToCatalog">
+              <i class="bi bi-arrow-left" aria-hidden="true"></i>
+            </button>
+            <h1 id="timetable-mobile-title">ตารางเรียน</h1>
+            <div class="timetable-mobile-account">
+              <button
+                ref="timetableAccountButton"
+                class="timetable-mobile-icon"
+                type="button"
+                :aria-label="`เมนูบัญชี ${displayName}`"
+                :aria-expanded="accountMenuOpen"
+                aria-haspopup="true"
+                @click="accountMenuOpen = !accountMenuOpen"
+                @keydown.esc.stop.prevent="closeTimetableAccountMenu"
+              >
+                <i class="bi bi-person-circle" aria-hidden="true"></i>
+              </button>
+              <div v-if="accountMenuOpen" class="account-menu-list dropdown-menu-custom timetable-account-menu" @keydown.esc.stop.prevent="closeTimetableAccountMenu">
+                <p class="timetable-account-name">{{ displayName }}</p>
+                <button class="dropdown-item py-2" @click="accountMenuOpen = false; openMyReviews()">
+                  <i class="bi bi-star-fill text-warning me-2"></i>รีวิวของฉัน
+                </button>
+                <button v-if="accessRole" class="dropdown-item py-2" @click="accountMenuOpen = false; openDashboard()">แดชบอร์ดผู้ดูแล</button>
+                <hr class="dropdown-divider" />
+                <button class="dropdown-item py-2" @click="accountMenuOpen = false; clearTimetable()">
+                  <i class="bi bi-trash-fill text-danger me-2"></i>ล้างตาราง
+                </button>
+                <button class="dropdown-item py-2" @click="accountMenuOpen = false; contactOpen = true">
+                  <i class="bi bi-chat-heart-fill me-2"></i>แจ้งปัญหา/ติดต่อ
+                </button>
+                <hr class="dropdown-divider" />
+                <button class="dropdown-item py-2 text-danger fw-bold" @click="accountMenuOpen = false; signOut()">
+                  <i class="bi bi-box-arrow-right me-2"></i>ออกจากระบบ
+                </button>
+              </div>
+            </div>
+          </div>
+          <div class="timetable-weekdays" role="group" aria-label="เลือกวันเรียน">
+            <button
+              v-for="(shortName, index) in shortDayNames"
+              :key="shortName"
+              class="timetable-day-button"
+              type="button"
+              :aria-label="`เลือกวัน${dayNames[index + 1]}`"
+              :aria-pressed="selectedTimetableDay === index + 1"
+              :class="{ 'is-selected': selectedTimetableDay === index + 1 }"
+              @click="selectedTimetableDay = index + 1"
+            >{{ shortName }}</button>
+          </div>
+          <p class="timetable-day-summary" aria-live="polite">
+            <span class="visually-hidden">วัน{{ dayNames[selectedTimetableDay] }}: </span>
+            <template v-if="timetableLoading">กำลังโหลดตารางเรียน…</template>
+            <template v-else-if="!timetableEntries.length && error">ไม่สามารถโหลดตารางเรียนได้</template>
+            <template v-else-if="!timetableEntries.length">ตารางเรียนยังว่างเปล่า</template>
+            <template v-else-if="selectedDayEntries.length">{{ selectedDayEntries.length }} คาบเรียน · แตะวิชาเพื่อลบ</template>
+            <template v-else>ไม่มีคาบเรียน</template>
+          </p>
+        </header>
+        <p v-if="error" class="text-danger timetable-error" role="alert">{{ error }}</p>
+        <div v-if="timetableLoading && !timetableEntries.length" class="timetable-day-view d-md-none" role="status">กำลังโหลดตารางเรียน…</div>
+        <div v-else-if="!timetableEntries.length && !error" class="timetable-empty-mobile d-md-none">
+          <i class="bi bi-calendar-x" aria-hidden="true"></i>
+          <h2>ตารางเรียนยังว่างเปล่า</h2>
+          <p>กลับหน้ารายวิชาเพื่อเพิ่มวิชาลงตาราง</p>
+        </div>
+        <div v-else-if="selectedDayEntries.length" class="timetable-day-view d-md-none" :aria-label="`ตารางเรียนวัน${dayNames[selectedTimetableDay]}`">
+          <div v-if="timetableListFallback" class="timetable-day-list">
+            <button
+              v-for="entry in selectedDayEntries"
+              :key="timetableMeetingKey(entry)"
+              class="timetable-day-course timetable-day-course-list"
+              :class="courseColor(entry.course_code)"
+              :aria-label="timetableEntryLabel(entry)"
+              @click="confirmRemoveFromTimetable(entry)"
+            >
+              <span class="timetable-day-course-time">{{ timeValue(entry.starts_at) }}–{{ timeValue(entry.ends_at) }}</span>
+              <span class="timetable-day-course-details">
+                <strong class="timetable-day-course-code">{{ entry.course_code }} · กลุ่ม {{ entry.section }}</strong>
+                <span class="timetable-day-course-name">{{ entry.course_name }}</span>
+                <span v-if="entry.instructor_name" class="timetable-day-course-instructor">{{ entry.instructor_name }}</span>
+              </span>
+            </button>
+          </div>
+          <div v-else class="timetable-day-timeline" :style="{ height: `calc(var(--timetable-hour-height) * ${timelineHours.length - 1})` }">
+            <div v-for="(hour, index) in timelineHours" :key="hour" class="timetable-day-hour" :style="{ top: `calc(var(--timetable-hour-height) * ${index})` }" aria-hidden="true">
+              <span>{{ String(hour).padStart(2, '0') }}:00</span><span class="timetable-day-hour-line"></span>
+            </div>
+            <button
+              v-for="entry in selectedDayEntries"
+              :key="timetableMeetingKey(entry)"
+              class="timetable-day-course"
+              :class="[courseColor(entry.course_code), { 'timetable-day-course-short': timetableDuration(entry) < 60 }]"
+              :style="timetableDayStyle(entry)"
+              :aria-label="timetableEntryLabel(entry)"
+              @click="confirmRemoveFromTimetable(entry)"
+            >
+              <strong class="timetable-day-course-code">{{ entry.course_code }} · กลุ่ม {{ entry.section }}</strong>
+              <span class="timetable-day-course-time">{{ timeValue(entry.starts_at) }}–{{ timeValue(entry.ends_at) }}</span>
+              <span v-if="timetableDuration(entry) >= 60" class="timetable-day-course-name">{{ entry.course_name }}</span>
+              <span v-if="timetableDuration(entry) >= 60 && entry.instructor_name" class="timetable-day-course-instructor">{{ entry.instructor_name }}</span>
+            </button>
+          </div>
+        </div>
+        <div v-else-if="timetableEntries.length && !timetableLoading" class="timetable-empty-day d-md-none">
+          <i class="bi bi-calendar-check" aria-hidden="true"></i>
+          <h2>ไม่มีเรียนวัน{{ dayNames[selectedTimetableDay] }}</h2>
+        </div>
+        <div v-if="!timetableEntries.length && !timetableLoading && !error" class="review-box text-center py-5 d-none d-md-block">
           <i class="bi bi-calendar-x" style="font-size: 5rem; color: var(--line)"></i>
           <h2 class="h4 text-purple mt-4">ตารางเรียนยังว่างเปล่า</h2>
-          <p class="text-muted">
-            กลับไปที่หน้าหลักแล้วกด "เพิ่มลงตาราง" ในรายละเอียดวิชากันเลย!
-          </p>
-          <button class="btn btn-purple mt-3 px-4" @click="timetable = false">
-            ไปเลือกวิชาเรียน
-          </button>
+          <p class="text-muted">กลับไปที่หน้าหลักแล้วกด "เพิ่มลงตาราง" ในรายละเอียดวิชากันเลย!</p>
+          <button class="btn btn-purple mt-3 px-4" @click="returnToCatalog">ไปเลือกวิชาเรียน</button>
         </div>
-        <template v-else
-          ><div class="timetable-agenda d-md-none">
-            <section v-for="day in timetableAgenda" :key="day.day" class="timetable-agenda-day">
-              <h2 class="timetable-agenda-day-label">{{ day.name }}</h2>
-              <button v-for="entry in day.entries" :key="`${entry.offering_id ?? entry.review_id}-${entry.day_of_week}`" class="timetable-agenda-item" :class="courseColor(entry.course_code)" title="คลิกเพื่อลบวิชานี้" @click="confirmRemoveFromTimetable(entry)">
-                <span class="timetable-agenda-time">{{ timeValue(entry.starts_at) }}–{{ timeValue(entry.ends_at) }}</span>
-                <span><strong>{{ entry.course_code }} ({{ entry.section }})</strong><small v-if="entry.instructor_name" class="d-block">{{ entry.instructor_name }}</small></span>
-              </button>
-            </section>
-          </div><div class="timetable-container d-none d-md-block">
+        <template v-if="timetableEntries.length">
+          <div class="timetable-container d-none d-md-block">
             <div class="timetable-grid">
               <div class="time-header-row">
                 <div v-for="hour in 12" :key="hour" class="time-header-slot">
@@ -479,7 +647,7 @@ onMounted(async () => {
                     v-for="entry in timetableEntries.filter(
                       (item) => item.day_of_week === day
                     )"
-                    :key="`${entry.offering_id ?? entry.review_id}-${day}`"
+                    :key="timetableMeetingKey(entry)"
                     class="timetable-course"
                     :class="courseColor(entry.course_code)"
                     :style="timetableStyle(entry)"
@@ -507,11 +675,11 @@ onMounted(async () => {
                 (item, index, items) =>
                   items.findIndex(
                     (other) =>
-                      (other.offering_id ?? other.review_id) ===
-                      (item.offering_id ?? item.review_id)
+                      (other.offering_id ?? other.review_id ?? other.legacy_entry_id) ===
+                      (item.offering_id ?? item.review_id ?? item.legacy_entry_id)
                   ) === index
               )"
-              :key="entry.offering_id ?? entry.review_id!"
+              :key="entry.offering_id ?? entry.review_id ?? entry.legacy_entry_id!"
               class="d-flex justify-content-between align-items-center border-bottom py-2"
             >
               <span

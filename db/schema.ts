@@ -80,3 +80,35 @@ export const roleAudit = appPrivate.table('role_audit', {
 }, (table) => [
   check('role_audit_action_check', sql`${table.action} in ('bootstrap_owner', 'grant_administrator', 'revoke_administrator')`),
 ])
+
+export const timetableLegacyEntries = appPrivate.table('timetable_legacy_entries', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  userId: uuid('user_id').notNull(),
+  entryHash: text('entry_hash').notNull(),
+  courseCode: text('course_code').notNull(),
+  courseName: text('course_name').notNull().default(''),
+  section: text('section').notNull(),
+  instructorName: text('instructor_name'),
+  dayOfWeek: integer('day_of_week').notNull(),
+  startsAt: time('starts_at').notNull(),
+  endsAt: time('ends_at').notNull(),
+  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+}, (table) => [
+  check('timetable_legacy_day_check', sql`${table.dayOfWeek} between 1 and 7`),
+  check('timetable_legacy_time_check', sql`${table.endsAt} > ${table.startsAt}`),
+  unique('timetable_legacy_user_entry_unique').on(table.userId, table.entryHash),
+])
+
+export const legacyTimetableMigrationReceipts = appPrivate.table('legacy_timetable_migration_receipts', {
+  userId: uuid('user_id').notNull(),
+  migrationVersion: integer('migration_version').notNull(),
+  entryHash: text('entry_hash').notNull(),
+  outcome: text('outcome').notNull(),
+  offeringId: uuid('offering_id').references(() => offerings.id, { onDelete: 'set null' }),
+  legacyEntryId: uuid('legacy_entry_id').references(() => timetableLegacyEntries.id, { onDelete: 'set null' }),
+  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+}, (table) => [
+  check('legacy_timetable_receipt_version_check', sql`${table.migrationVersion} > 0`),
+  check('legacy_timetable_receipt_outcome_check', sql`${table.outcome} in ('added-official', 'added-legacy', 'already-present', 'invalid', 'conflict')`),
+  unique('legacy_timetable_receipt_user_version_entry_unique').on(table.userId, table.migrationVersion, table.entryHash),
+])

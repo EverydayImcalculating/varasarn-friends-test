@@ -21,6 +21,7 @@
   --safe-right: env(safe-area-inset-right, 0px);
   --safe-bottom: env(safe-area-inset-bottom, 0px);
   --safe-left: env(safe-area-inset-left, 0px);
+  --timetable-hour-height: 7.5rem;
 }
 
 * { box-sizing: border-box; }
@@ -240,19 +241,60 @@ h1, h2, h3, h4, h5, h6 { font-family: 'Kanit', sans-serif; }
 .admin-code-example { max-width: 100%; overflow-x: auto; padding: .5rem .75rem; border: 1px solid var(--line); border-radius: var(--radius-md); background: var(--white); font-size: .8rem; white-space: pre; }
 .admin-code-example code { white-space: inherit; }
 .admin-content { min-width: 0; }
-.timetable-agenda { display: flex; flex-direction: column; gap: 12px; }
-.timetable-agenda-day { padding: 16px; border: 1px solid var(--line); border-radius: var(--radius-lg); background: var(--white); box-shadow: var(--shadow-card); }
-.timetable-agenda-day-label { margin: 0 0 12px; color: var(--purple-700); font-size: 1.1rem; }
-.timetable-agenda-item { display: grid; grid-template-columns: minmax(88px, auto) 1fr; align-items: center; gap: 12px; width: 100%; min-height: var(--tap-min); margin-top: 8px; padding: 10px 12px; border-top: 1px solid rgba(0,0,0,.05); border-right: 1px solid rgba(0,0,0,.05); border-bottom: 1px solid rgba(0,0,0,.05); border-left-width: 5px; border-radius: 10px; text-align: left; }
-.timetable-agenda-item:first-of-type { margin-top: 0; }
-.timetable-agenda-item small { margin-top: 2px; opacity: .9; }
-.timetable-agenda-time { font-variant-numeric: tabular-nums; white-space: nowrap; }
+.timetable-day-summary { margin: 4px 0 0; color: var(--ink-600); font-size: .8rem; line-height: 1.4; text-align: center; }
+.timetable-error { margin: 12px 16px; }
+.timetable-empty-mobile, .timetable-empty-day { display: flex; min-height: 220px; flex-direction: column; align-items: center; justify-content: center; gap: 10px; padding: 24px 16px; border-radius: var(--radius-lg); background: var(--purple-50); text-align: center; }
+.timetable-empty-mobile > i, .timetable-empty-day > i { color: var(--purple-300); font-size: 2.5rem; }
+.timetable-empty-mobile h2, .timetable-empty-day h2 { margin: 0; color: var(--purple-700); font-size: 1.2rem; }
+.timetable-empty-mobile p { margin: 0; color: var(--ink-600); }
+.timetable-day-timeline { position: relative; margin: 20px 0 24px; }
+.timetable-day-hour { position: absolute; right: 0; left: 0; display: grid; grid-template-columns: 2.75rem minmax(0, 1fr); column-gap: .75rem; height: 20px; transform: translateY(-50%); pointer-events: none; }
+.timetable-day-hour > span:first-child { position: relative; top: 50%; transform: translateY(-50%); color: var(--ink-600); font-size: .75rem; font-variant-numeric: tabular-nums; line-height: 1; }
+.timetable-day-hour-line { align-self: center; height: 1px; background: var(--line); }
+.timetable-day-course { position: absolute; right: 0; left: 3.5rem; z-index: 1; display: flex; min-width: 0; min-height: var(--tap-min); flex-direction: column; justify-content: center; gap: 2px; overflow: hidden; padding: 8px 10px; border: 1px solid rgba(0,0,0,.06); border-left: 5px solid currentColor; border-radius: 14px; text-align: left; cursor: pointer; }
+.timetable-day-course:focus-visible, .timetable-day-button:focus-visible, .timetable-mobile-icon:focus-visible { outline: 3px solid var(--purple-600); outline-offset: 2px; }
+.timetable-day-course-code { display: block; overflow: hidden; color: inherit; font-family: 'Kanit', sans-serif; font-size: .9rem; font-weight: 600; line-height: 1.2; text-overflow: ellipsis; white-space: nowrap; }
+.timetable-day-course-time { display: block; flex: 0 0 auto; font-size: .8rem; font-variant-numeric: tabular-nums; line-height: 1.2; white-space: nowrap; }
+.timetable-day-course-name, .timetable-day-course-instructor { display: block; overflow: hidden; line-height: 1.25; text-overflow: ellipsis; white-space: nowrap; }
+.timetable-day-course-name { font-size: .8rem; }
+.timetable-day-course-instructor { font-size: .7rem; opacity: .9; }
+.timetable-day-course-short { gap: 1px; padding: 6px 10px; }
+.timetable-day-course-short .timetable-day-course-code { font-size: .85rem; }
+.timetable-day-course-short .timetable-day-course-time { font-size: .75rem; }
+.timetable-day-list { display: flex; flex-direction: column; gap: 10px; padding: 16px 0 24px; }
+.timetable-day-course-list { position: static; display: grid; width: 100%; height: auto; min-height: var(--tap-min); grid-template-columns: minmax(80px, max-content) minmax(0, 1fr); align-items: center; gap: 12px; padding: 10px 12px; }
+.timetable-day-course-list .timetable-day-course-time { white-space: nowrap; }
+.timetable-day-course-list .timetable-day-course-details { display: flex; min-width: 0; flex-direction: column; gap: 3px; overflow-wrap: anywhere; }
+.timetable-day-course-list .timetable-day-course-code, .timetable-day-course-list .timetable-day-course-name, .timetable-day-course-list .timetable-day-course-instructor { white-space: normal; }
+.timetable-day-course-list .timetable-day-course-code { overflow: visible; }
+.timetable-mobile-header { position: sticky; top: 0; z-index: 30; margin: 0 -16px 10px; padding: calc(var(--safe-top) + 4px) max(16px, var(--safe-right)) 10px max(16px, var(--safe-left)); border-bottom: 1px solid var(--line); background: var(--white); }
+.timetable-mobile-bar { display: grid; min-height: 48px; grid-template-columns: 44px minmax(0, 1fr) 44px; align-items: center; column-gap: 8px; }
+.timetable-mobile-bar h1 { overflow: hidden; margin: 0; color: var(--purple-900); font-size: 1.2rem; line-height: 1.2; text-align: center; text-overflow: ellipsis; white-space: nowrap; }
+.timetable-mobile-icon { display: inline-flex; width: 44px; height: 44px; align-items: center; justify-content: center; padding: 0; border: 0; border-radius: 50%; background: transparent; color: var(--purple-900); font-size: 1.3rem; }
+.timetable-mobile-icon:hover { background: var(--purple-100); }
+.timetable-mobile-account { position: relative; justify-self: end; }
+.timetable-account-menu { top: calc(100% + 8px); right: 0; z-index: 100; width: min(280px, calc(100vw - 32px)); max-height: min(70vh, 520px); overflow-y: auto; }
+.timetable-account-name { overflow: hidden; margin: 4px 16px 8px; color: var(--ink-600); font-size: .85rem; text-overflow: ellipsis; white-space: nowrap; }
+.timetable-weekdays { display: grid; grid-template-columns: repeat(7, minmax(44px, 1fr)); gap: 2px; overflow-x: auto; padding: 4px 0 2px; scrollbar-width: none; }
+.timetable-weekdays::-webkit-scrollbar { display: none; }
+.timetable-day-button { display: inline-flex; min-width: 44px; min-height: 44px; align-items: center; justify-content: center; padding: 0 2px; border: 0; border-radius: var(--radius-pill); background: transparent; color: var(--ink-600); font-family: 'Kanit', sans-serif; font-size: .95rem; font-weight: 500; }
+.timetable-day-button:hover { background: var(--purple-50); color: var(--purple-700); }
+.timetable-day-button.is-selected, .timetable-day-button.is-selected:hover { background: var(--purple-700); color: var(--white); }
 
 @media (max-width: 991px) {
   .admin-nav { mask-image: linear-gradient(to right, #000 calc(100% - var(--scroll-fade)), transparent); }
   .admin-nav::after { content: ''; flex: 0 0 var(--scroll-fade); }
 }
 @media (max-width: 767px) {
+  .mobile-timetable-screen { min-height: 100vh; min-height: 100dvh; background: var(--white); }
+  .mobile-timetable-screen > .navbar { display: none !important; }
+  .mobile-timetable-screen > .app-body { width: 100%; max-width: none; min-height: 100vh; min-height: 100dvh; margin: 0; padding: 0 16px calc(2rem + var(--safe-bottom)) !important; }
+  .mobile-timetable-screen .screen-header { display: none !important; }
+  .mobile-timetable-screen .mobile-navigation-row { display: none !important; }
+  .mobile-timetable-screen .floating-contact-btn { display: none !important; }
+  .mobile-timetable-screen .timetable-empty-mobile,
+  .mobile-timetable-screen .timetable-empty-day,
+  .mobile-timetable-screen .timetable-day-view { margin-top: 14px; }
   .category-menu::after { content: ''; flex: 0 0 var(--scroll-fade); }
   .category-menu { mask-image: linear-gradient(to right, #000 calc(100% - var(--scroll-fade)), transparent); }
   .admin-merge-row { flex-direction: column; align-items: stretch; }
