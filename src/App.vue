@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted, onBeforeUnmount, ref, watch } from 'vue'
+import { computed, nextTick, onMounted, onBeforeUnmount, ref, watch } from 'vue'
 import { neon, signInWithGoogle } from './neon'
 import { fetchAllRows, withRange } from './services/pagination'
 import { AdminService, type Category } from './services/admin'
@@ -53,17 +53,85 @@ const categories = ref<Category[]>([]); const courseCode = ref(''); const course
 const courseModalOpen = ref(false)
 const proposalYear = ref(new Date().getFullYear() + 543); const proposalSemester = ref('1'); const proposalSection = ref(''); const proposalInstructor = ref(''); const myProposals = ref<OfferingProposal[]>([])
 const searchTerm = ref(''); const categoryFilter = ref('')
+const categoriesExpanded = ref(false)
 const reviewRatingFilter = ref(0); const reviewSemesterFilter = ref(''); const reviewYearFilter = ref(0)
-const filteredCourses = computed(() => courses.value.filter((course) => {
-  const search = searchTerm.value.trim().toLowerCase()
-  return (!search || `${course.code} ${course.name_th}`.toLowerCase().includes(search)) && (!categoryFilter.value || course.category_name === categoryFilter.value)
-}))
+type CatalogSort = 'code' | 'reviews' | 'rating'
+const reviewedOnly = ref(false); const catalogSort = ref<CatalogSort>('code'); const catalogError = ref('')
+// Codes are typed as "jc 221" as often as "JC221", so matching ignores case and whitespace.
+function searchKey(value: string) { return value.toLowerCase().replace(/\s+/g, '') }
+function isReviewed(course: Course) { return (course.review_count ?? 0) > 0 }
+function matchesSearch(course: Course) {
+  const search = searchKey(searchTerm.value)
+  return !search || searchKey(course.code).includes(search) || searchKey(course.name_th).includes(search)
+}
+function matchesSearchAndReviewed(course: Course) { return matchesSearch(course) && (!reviewedOnly.value || isReviewed(course)) }
+const filteredCourses = computed(() => {
+  const matches = courses.value.filter((course) => matchesSearchAndReviewed(course) && (!categoryFilter.value || course.category_name === categoryFilter.value))
+  if (catalogSort.value === 'code') return matches
+  const byCode = (a: Course, b: Course) => a.code.localeCompare(b.code)
+  const byReviews = (a: Course, b: Course) => (b.review_count ?? 0) - (a.review_count ?? 0)
+  return [...matches].sort(catalogSort.value === 'reviews'
+    ? (a, b) => byReviews(a, b) || byCode(a, b)
+    : (a, b) => (b.average_rating ?? -1) - (a.average_rating ?? -1) || byReviews(a, b) || byCode(a, b))
+})
+// Each count says how many results picking that control would give: category pills follow the
+// search and reviewed filters, the reviewed toggle follows the search and category filters.
+const categoryCounts = computed(() => {
+  const counts: Record<string, number> = {}
+  for (const course of courses.value) if (matchesSearchAndReviewed(course)) counts[course.category_name] = (counts[course.category_name] ?? 0) + 1
+  return counts
+})
+const searchAndReviewedCount = computed(() => Object.values(categoryCounts.value).reduce((sum, count) => sum + count, 0))
+const reviewedCount = computed(() => courses.value.filter((course) => isReviewed(course) && matchesSearch(course) && (!categoryFilter.value || course.category_name === categoryFilter.value)).length)
+const catalogCountsAvailable = computed(() => courses.value.length > 0 || (!loading.value && !catalogError.value))
+const catalogFiltered = computed(() => Boolean(searchTerm.value.trim() || categoryFilter.value || reviewedOnly.value))
 async function loadCatalog() {
   if (!neon) { loading.value = false; error.value = 'ตั้งค่า Neon endpoint ใน .env.local ก่อนใช้งาน'; return }
+  loading.value = true; catalogError.value = ''
   const { data, error: apiError } = await fetchAllRows<Course>((from, to) => withRange((neon as any).rpc('list_approved_catalog', undefined, { count: 'exact' }), from, to))
-  if (apiError) error.value = apiError.message; else courses.value = data
+  // A later page can fail after earlier pages loaded; show those rows (with a warning) rather
+  // than an empty catalog, but never replace an already-loaded full list with a partial one.
+  if (apiError) { catalogError.value = apiError.message; if (!courses.value.length) courses.value = data }
+  else courses.value = data
   loading.value = false
 }
+const catalogActive = computed(() => signedIn.value && !dashboard.value && !timetable.value && !myReviewsScreen.value)
+const toolbarStuck = ref(false); const showBackToTop = ref(false); const searchFocused = ref(false)
+// The sentinel sits just above the sticky toolbar; once it scrolls above the viewport the
+// toolbar is stuck. Read on scroll (one rect per event) rather than via IntersectionObserver,
+// whose callbacks can lag behind a programmatic scroll the filter watcher needs to act on.
+let toolbarSentinel: HTMLElement | null = null
+function setToolbarSentinel(element: unknown) { toolbarSentinel = element instanceof HTMLElement ? element : null; updateScrollState() }
+function updateScrollState() {
+  toolbarStuck.value = !!toolbarSentinel && toolbarSentinel.getBoundingClientRect().top < 0
+  showBackToTop.value = window.scrollY > window.innerHeight * 2
+}
+// Changing a filter while deep in a 200+ card list would otherwise leave the reader somewhere
+// in the middle of (or past the end of) the new, shorter result list.
+watch([searchTerm, categoryFilter, reviewedOnly, catalogSort], () => {
+  updateScrollState()
+  // 'instant', not the default: Bootstrap's reboot sets `scroll-behavior: smooth`, and a smooth
+  // scroll still running when the list shrinks gets clamped at the new, shorter page's end.
+  if (toolbarStuck.value && toolbarSentinel) window.scrollTo({ top: toolbarSentinel.getBoundingClientRect().top + window.scrollY + 1, behavior: 'instant' })
+})
+async function selectCategory(name: string, event: Event) {
+  const button = event.currentTarget as HTMLElement | null
+  updateScrollState()
+  const wasStuck = toolbarStuck.value
+  categoryFilter.value = name
+  categoriesExpanded.value = false
+  await nextTick()
+  button?.scrollIntoView?.({ block: 'nearest', inline: 'nearest', behavior: 'instant' })
+  // Revealing the selected pill after collapse can scroll the page as well as the
+  // pill row. Restore the sticky position after that browser layout adjustment.
+  if (wasStuck && toolbarSentinel) window.scrollTo({ top: toolbarSentinel.getBoundingClientRect().top + window.scrollY + 1, behavior: 'instant' })
+}
+function scrollToTop() {
+  const reduceMotion = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches
+  window.scrollTo({ top: 0, behavior: reduceMotion ? 'auto' : 'smooth' })
+}
+window.addEventListener('scroll', updateScrollState, { passive: true })
+onBeforeUnmount(() => window.removeEventListener('scroll', updateScrollState))
 async function loadOfferings(courseId: string) {
   offerings.value = []; offeringMeetings.value = {}
   const { data, error: apiError } = await (neon as any).rpc('list_approved_offerings', { p_course_id: courseId })
@@ -303,6 +371,7 @@ async function signOut() {
   timetable.value = false
   myReviewsScreen.value = false
   error.value = ''
+  catalogError.value = ''
   accountMenuOpen.value = false
   contactOpen.value = false
   displayName.value = 'บัญชีของฉัน'
@@ -337,7 +406,7 @@ onMounted(async () => {
 </script>
 
 <template>
-  <main :class="{ 'mobile-timetable-screen': timetableActive }">
+  <main :class="{ 'mobile-timetable-screen': timetableActive, 'catalog-search-focused': searchFocused }">
     <nav v-if="signedIn" class="navbar navbar-custom navbar-dark mb-4">
       <div class="container d-flex justify-content-between align-items-center">
         <button
@@ -803,84 +872,163 @@ onMounted(async () => {
         </article>
       </section>
       <template v-else>
-        <p v-if="loading">กำลังโหลดข้อมูล...</p>
-        <template v-else>
-          <p v-if="error" class="alert alert-danger" role="alert">{{ error }}</p>
-          <div class="mb-4 mt-2 hero-banner">
-            <img
-              src="https://i.postimg.cc/FFk3NRHV/IMG-0677.jpg"
-              class="img-fluid w-100"
-              alt="Banner แนะนำรายวิชา"
-            />
-          </div>
-          <div class="about alert shadow-sm mb-4">
-            <div class="text-center p-2 p-md-3">
-              <h5 class="text-purple fw-bold mb-3">
-                <i class="bi bi-info-circle-fill me-2"></i>เกี่ยวกับ Varasarn Close
-                Friends
-              </h5>
-              <p class="mb-3 about-description">
-                เว็บไซต์รวบรวมรีวิววิชาเรียนของคณะวารสารศาสตร์และสื่อสารมวลชน<br
-                  class="d-none d-md-block"
-                />ทั้งหลักสูตรภาคปกติ (JC) และหลักสูตรนานาชาติ (BJM)
-                เป็นพื้นที่รวบรวมความคิดเห็นจากนักศึกษา<br /><span
-                  class="about-owner fw-bold"
-                  >ดูแลโดยคณะกรรมการนักศึกษา (กน.วส.)</span
-                >
-              </p>
-              <div class="about-contact d-inline-block px-4 py-2 mt-2">
-                <small class="text-muted fw-medium"
-                  ><i class="bi bi-headset me-1"></i>พบปัญหาหรือต้องการสอบถามติดต่อ</small
-                ><a
-                  href="https://www.instagram.com/varasarn_official"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  class="about-instagram text-decoration-none fw-bold ms-2"
-                  ><i class="bi bi-instagram me-1"></i>IG : varasarn_official</a
-                >
-              </div>
+        <p v-if="error" class="alert alert-danger" role="alert">{{ error }}</p>
+        <h1 class="visually-hidden">Varasarn Close Friends</h1>
+        <div class="mb-4 mt-2 hero-banner">
+          <img
+            src="https://i.postimg.cc/FFk3NRHV/IMG-0677.jpg"
+            class="img-fluid w-100"
+            alt="Banner แนะนำรายวิชา"
+          />
+        </div>
+        <div class="about alert shadow-sm mb-4">
+          <div class="text-center p-2 p-md-3">
+            <h2 class="h5 text-purple fw-bold mb-3">
+              <i class="bi bi-info-circle-fill me-2"></i>เกี่ยวกับ Varasarn Close
+              Friends
+            </h2>
+            <p class="mb-3 about-description">
+              เว็บไซต์รวบรวมรีวิววิชาเรียนของคณะวารสารศาสตร์และสื่อสารมวลชน<br
+                class="d-none d-md-block"
+              />ทั้งหลักสูตรภาคปกติ (JC) และหลักสูตรนานาชาติ (BJM)
+              เป็นพื้นที่รวบรวมความคิดเห็นจากนักศึกษา<br /><span
+                class="about-owner fw-bold"
+                >ดูแลโดยคณะกรรมการนักศึกษา (กน.วส.)</span
+              >
+            </p>
+            <div class="about-contact d-inline-block px-4 py-2 mt-2">
+              <small class="text-muted fw-medium"
+                ><i class="bi bi-headset me-1"></i>พบปัญหาหรือต้องการสอบถามติดต่อ</small
+              ><a
+                href="https://www.instagram.com/varasarn_official"
+                target="_blank"
+                rel="noopener noreferrer"
+                class="about-instagram text-decoration-none fw-bold ms-2"
+                ><i class="bi bi-instagram me-1"></i>IG : varasarn_official</a
+              >
             </div>
           </div>
-          <div
-            class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2"
+        </div>
+        <div
+          class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2"
+        >
+          <h2 class="h4 mb-0 section-label">รายวิชาทั้งหมด</h2>
+          <button
+            v-if="accessRole"
+            class="btn btn-outline-purple shadow-sm add-course-btn"
+            @click="openCourseModal"
           >
-            <h4 class="mb-0 section-label">รายวิชาทั้งหมด</h4>
-            <button
-              v-if="accessRole"
-              class="btn btn-outline-purple shadow-sm add-course-btn"
-              @click="openCourseModal"
-            >
-              <i class="bi bi-plus-lg me-1"></i>เพิ่มรายวิชาใหม่
-            </button>
-          </div>
-          <div class="mb-3 search-wrap">
-            <i class="bi bi-search search-icon"></i
+            <i class="bi bi-plus-lg me-1"></i>เพิ่มรายวิชาใหม่
+          </button>
+        </div>
+        <div :ref="setToolbarSentinel" class="catalog-toolbar-sentinel" aria-hidden="true"></div>
+        <div class="catalog-toolbar" :class="{ 'is-stuck': toolbarStuck }">
+          <div class="search-wrap">
+            <i class="bi bi-search search-icon" aria-hidden="true"></i
             ><input
               v-model="searchTerm"
+              type="search"
               class="form-control form-control-lg shadow-sm"
               placeholder="ค้นหารหัสวิชา หรือ ชื่อวิชา..."
               aria-label="ค้นหารหัสวิชา หรือ ชื่อวิชา"
-            />
-          </div>
-          <div class="category-menu">
-            <button
-              class="btn category-btn"
-              :class="categoryFilter ? 'btn-outline-purple' : 'btn-purple'"
-              @click="categoryFilter = ''"
+              @focus="searchFocused = true"
+              @blur="searchFocused = false"
+            /><button
+              v-if="searchTerm"
+              class="search-clear"
+              type="button"
+              aria-label="ล้างคำค้นหา"
+              @click="searchTerm = ''"
             >
-              ทั้งหมด</button
-            ><button
-              v-for="category in categories"
-              :key="category.id"
-              class="btn category-btn"
-              :class="
-                categoryFilter === category.name ? 'btn-purple' : 'btn-outline-purple'
-              "
-              @click="categoryFilter = category.name"
-            >
-              {{ category.name }}
+              <i class="bi bi-x-circle-fill" aria-hidden="true"></i>
             </button>
           </div>
+          <div class="catalog-toolbar-actions">
+            <button
+              class="btn category-btn catalog-reviewed-toggle"
+              :class="reviewedOnly ? 'btn-purple' : 'btn-outline-purple'"
+              type="button"
+              :aria-pressed="reviewedOnly"
+              @click="reviewedOnly = !reviewedOnly"
+            >
+              <i class="bi bi-star-fill me-1" aria-hidden="true"></i>มีรีวิว<span v-if="catalogCountsAvailable" class="category-count">{{ reviewedCount }}</span>
+            </button>
+            <div class="catalog-sort-control">
+              <label for="catalog-sort" class="visually-hidden">เรียงตาม:</label>
+              <select id="catalog-sort" v-model="catalogSort" class="form-select catalog-sort">
+                <option value="code">รหัสวิชา</option>
+                <option value="rating">★ คะแนนสูงสุด</option>
+                <option value="reviews">รีวิวมากสุด</option>
+              </select>
+            </div>
+          </div>
+          <div class="catalog-categories" :class="{ 'is-expanded': categoriesExpanded }">
+            <div id="catalog-categories" class="category-menu" role="group" aria-label="กรองตามหมวดหมู่">
+              <button
+                class="btn category-btn"
+                :class="categoryFilter ? 'btn-outline-purple' : 'btn-purple'"
+                type="button"
+                :aria-pressed="!categoryFilter"
+                @click="selectCategory('', $event)"
+              >
+                ทั้งหมด<span v-if="catalogCountsAvailable" class="category-count">{{ searchAndReviewedCount }}</span></button
+              ><button
+                v-for="category in categories"
+                :key="category.id"
+                class="btn category-btn"
+                :class="[
+                  categoryFilter === category.name ? 'btn-purple' : 'btn-outline-purple',
+                  { 'is-empty': catalogCountsAvailable && !categoryCounts[category.name] },
+                ]"
+                type="button"
+                :aria-pressed="categoryFilter === category.name"
+                @click="selectCategory(category.name, $event)"
+              >
+                {{ category.name }}<span v-if="catalogCountsAvailable" class="category-count">{{ categoryCounts[category.name] ?? 0 }}</span>
+              </button>
+            </div>
+            <button class="btn btn-outline-purple catalog-category-disclosure d-md-none" type="button"
+              aria-controls="catalog-categories" :aria-expanded="categoriesExpanded" @click="categoriesExpanded = !categoriesExpanded">
+              {{ categoriesExpanded ? 'ย่อหมวด' : 'ทุกหมวด' }}
+              <i class="bi" :class="categoriesExpanded ? 'bi-chevron-up' : 'bi-chevron-down'" aria-hidden="true"></i>
+            </button>
+          </div>
+          <p class="catalog-result-count visually-hidden" role="status" aria-live="polite">
+            <template v-if="loading && !courses.length">กำลังโหลด…</template>
+            <template v-else-if="catalogError && !courses.length">โหลดรายวิชาไม่สำเร็จ</template>
+            <template v-else-if="catalogFiltered">พบ {{ filteredCourses.length }}<span class="d-none d-sm-inline"> จาก {{ courses.length }}</span> วิชา</template>
+            <template v-else>ทั้งหมด {{ courses.length }} วิชา</template>
+          </p>
+        </div>
+        <div
+          v-if="catalogError && courses.length"
+          class="alert alert-warning catalog-load-warning d-flex align-items-center justify-content-between flex-wrap gap-2"
+          role="alert"
+        >
+          <span><i class="bi bi-exclamation-triangle-fill me-2" aria-hidden="true"></i>โหลดรายวิชาได้ไม่ครบ รายการด้านล่างอาจยังไม่ครบทุกวิชา</span>
+          <button class="btn btn-sm btn-outline-purple catalog-retry" type="button" :disabled="loading" @click="loadCatalog">
+            <i class="bi bi-arrow-clockwise me-1" aria-hidden="true"></i>ลองอีกครั้ง
+          </button>
+        </div>
+        <div v-if="loading && !courses.length" class="row" aria-busy="true">
+          <div v-for="n in 6" :key="n" class="col-md-4 mb-4" aria-hidden="true">
+            <div class="course-card course-card-skeleton">
+              <span class="skeleton-line skeleton-badge"></span>
+              <span class="skeleton-line skeleton-code"></span>
+              <span class="skeleton-line"></span>
+              <span class="skeleton-line skeleton-short"></span>
+            </div>
+          </div>
+        </div>
+        <div v-else-if="catalogError && !courses.length" class="catalog-state" role="alert">
+          <i class="bi bi-cloud-slash catalog-state-icon" aria-hidden="true"></i>
+          <h3 class="h5 text-purple">โหลดรายวิชาไม่สำเร็จ</h3>
+          <p class="text-muted small mb-3">{{ catalogError }}</p>
+          <button class="btn btn-purple px-4 catalog-retry" type="button" @click="loadCatalog">
+            <i class="bi bi-arrow-clockwise me-1" aria-hidden="true"></i>ลองอีกครั้ง
+          </button>
+        </div>
+        <template v-else>
           <div class="row">
             <article
               v-for="course in filteredCourses"
@@ -897,20 +1045,30 @@ onMounted(async () => {
                     course.code
                   }}</span
                   ><span class="card-text d-block">{{ course.name_th }}</span>
-                  <span v-if="course.review_count !== undefined" class="course-rating-summary">
-                    <template v-if="course.review_count === 0">ยังไม่มีรีวิว</template>
-                    <template v-else-if="course.average_rating !== null && course.average_rating !== undefined">
-                      <StarRating class="stars" :value="course.average_rating" :label="`คะแนนเฉลี่ย ${course.average_rating.toFixed(1)} จาก 5 จาก ${course.review_count} รีวิว`" />
-                      <span aria-hidden="true">{{ course.average_rating.toFixed(1) }} · {{ course.review_count }} รีวิว</span>
-                    </template>
+                  <span
+                    v-if="course.review_count && course.average_rating !== null && course.average_rating !== undefined"
+                    class="course-rating-summary"
+                  >
+                    <StarRating class="stars" :value="course.average_rating" :label="`คะแนนเฉลี่ย ${course.average_rating.toFixed(1)} จาก 5 จาก ${course.review_count} รีวิว`" />
+                    <span aria-hidden="true">{{ course.average_rating.toFixed(1) }} · {{ course.review_count }} รีวิว</span>
                   </span></span
                 >
               </button>
             </article>
           </div>
-          <p v-if="!filteredCourses.length" class="text-muted">
-            ไม่พบรายวิชาที่ตรงกับการค้นหา
-          </p>
+          <div v-if="!filteredCourses.length" class="catalog-state catalog-empty">
+            <i class="bi bi-search catalog-state-icon" aria-hidden="true"></i>
+            <h3 class="h5 text-purple">
+              <template v-if="searchTerm.trim()">ไม่พบรายวิชาที่ตรงกับ “{{ searchTerm.trim() }}”</template>
+              <template v-else>ไม่พบรายวิชาที่ตรงกับตัวกรอง</template>
+            </h3>
+            <p class="text-muted small mb-3">ลองค้นหาด้วยรหัสวิชา เช่น JC221 หรือบางส่วนของชื่อวิชา</p>
+            <div class="d-flex flex-wrap justify-content-center gap-2">
+              <button v-if="searchTerm" class="btn btn-outline-purple" type="button" @click="searchTerm = ''">ล้างคำค้นหา</button>
+              <button v-if="categoryFilter" class="btn btn-outline-purple" type="button" @click="categoryFilter = ''">ดูทุกหมวด</button>
+              <button v-if="reviewedOnly" class="btn btn-outline-purple" type="button" @click="reviewedOnly = false">รวมวิชาที่ยังไม่มีรีวิว</button>
+            </div>
+          </div>
         </template>
         <section
           v-if="selected"
@@ -1252,6 +1410,15 @@ onMounted(async () => {
         </section>
       </template>
     </section>
+    <button
+      v-if="catalogActive && !selected && showBackToTop"
+      class="btn btn-outline-purple back-to-top-btn"
+      type="button"
+      aria-label="กลับขึ้นด้านบน"
+      @click="scrollToTop"
+    >
+      <i class="bi bi-arrow-up" aria-hidden="true"></i>
+    </button>
     <button
       v-if="signedIn"
       class="btn btn-purple floating-contact-btn"

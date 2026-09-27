@@ -45,7 +45,7 @@ describe('add-course button on the catalog page', () => {
     wrapper.unmount()
   })
 
-  it('shows accessible rating summaries and the explicit empty-review state', async () => {
+  it('shows accessible rating summaries and no text at all for an unreviewed course', async () => {
     fixture.catalog = [
       { id: 'rated', code: 'JC101', name_th: 'มีรีวิว', category_name: 'วิชาแกน', review_count: 12, average_rating: 4.2 },
       { id: 'empty', code: 'JC102', name_th: 'ยังว่าง', category_name: 'วิชาแกน', review_count: 0, average_rating: null },
@@ -56,7 +56,8 @@ describe('add-course button on the catalog page', () => {
     expect(cards[0].text()).toContain('★★★★☆')
     expect(cards[0].text()).toContain('4.2 · 12 รีวิว')
     expect(cards[0].text()).toContain('คะแนนเฉลี่ย 4.2 จาก 5 จาก 12 รีวิว')
-    expect(cards[1].text()).toContain('ยังไม่มีรีวิว')
+    expect(cards[1].text()).not.toContain('ยังไม่มีรีวิว')
+    expect(cards[1].find('.course-rating-summary').exists()).toBe(false)
     wrapper.unmount()
   })
 

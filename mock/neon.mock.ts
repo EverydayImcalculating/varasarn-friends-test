@@ -110,6 +110,28 @@ function restoreMockTimetable() {
 const previewParams = new URLSearchParams(window.location.search)
 const timetableScenario = previewParams.get('timetable')
 if (previewParams.get('large-text') === '1') document.documentElement.style.fontSize = '200%'
+// ?catalog=large mirrors production's catalog shape (214 approved courses across
+// 10 categories, ~6% reviewed, 2026-09-27) for scale checks of the catalog page;
+// ?catalog-delay=<ms> slows list_approved_catalog to exercise its loading state, and
+// ?catalog-error=1 below exercises its failure/retry state.
+if (previewParams.get('catalog') === 'large') {
+  const shape: Array<[string, string, number]> = [
+    ['วิชาศึกษาทั่วไป', 'TU', 60], ['กลุ่มวิชาบริหารการสื่อสาร', 'JC22', 24], ['กลุ่มวิชาภาพยนตร์และภาพถ่าย', 'JC27', 23],
+    ['กลุ่มวิชาวิทยุโทรทัศน์และสื่อดิจิทัล', 'JC23', 19], ['วิชาบังคับนอกคณะ', 'AS1', 18], ['กลุ่มวิชาโฆษณา', 'JC26', 18],
+    ['กลุ่มวิชาวารสารศาสตร์', 'JC21', 17], ['กลุ่มวิชาสื่อสารองค์กร', 'JC25', 14], ['วิชาบังคับเลือกหมวด', 'JC20', 11], ['วิชาแกนคณะ', 'JC10', 10],
+  ]
+  const names = ['การสื่อสารเชิงกลยุทธ์ในองค์กรและการบริหารภาพลักษณ์', 'การผลิตสื่อดิจิทัล', 'ภาษาอังกฤษเพื่อการสื่อสาร', 'การเขียนบทภาพยนตร์สั้น', 'หลักการโฆษณาและการสร้างแบรนด์ในยุคข้อมูลข่าวสาร', 'สังคมกับเศรษฐกิจ']
+  categories = shape.map(([name], index) => ({ id: `cat-${index + 1}`, name }))
+  let serial = 0
+  catalog = shape.flatMap(([category, prefix, count]) => Array.from({ length: count }, (_, index) => {
+    serial += 1
+    const reviewed = serial % 16 === 3
+    return { id: `course-l${serial}`, code: `${prefix}${String(index + 1).padStart(6 - prefix.length, '0')}`, name_th: names[serial % names.length], category_name: category, review_count: reviewed ? 1 + (serial % 4) : 0, average_rating: reviewed ? 2.5 + (serial % 5) * 0.5 : null }
+  })).sort((a, b) => a.code.localeCompare(b.code))
+}
+const catalogDelay = Number(previewParams.get('catalog-delay') ?? 0)
+// ?catalog-error=1 fails the first list_approved_catalog call (retry then succeeds).
+let catalogFailuresLeft = previewParams.get('catalog-error') === '1' ? 1 : 0
 const applyLayoutScenario = sessionStorage.getItem('mock-timetable-layout-initialized') !== '1'
 if (restoreMockTimetable() && applyLayoutScenario) { sessionStorage.setItem('mock-timetable-layout-initialized', '1') }
 else if (timetableScenario === 'day-view' && applyLayoutScenario) {
@@ -178,6 +200,8 @@ async function rpc(name: string, args?: Record<string, unknown>): Promise<RpcRes
     case 'current_access':
       return ok([{ role: 'owner' }])
     case 'list_approved_catalog':
+      if (catalogDelay) await new Promise((resolve) => setTimeout(resolve, catalogDelay))
+      if (catalogFailuresLeft > 0) { catalogFailuresLeft -= 1; return { data: null, error: { message: '[dev:mock] simulated catalog failure' } } as RpcResult<unknown> }
       return ok(catalog)
     case 'list_categories':
       return ok(categories)
