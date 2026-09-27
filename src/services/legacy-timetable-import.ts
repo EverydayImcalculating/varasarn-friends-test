@@ -28,6 +28,12 @@ function normalizedSection(value: string) { return value.replace(/\s+/g, '').toL
 function normalizedTeacher(value: string) { return value.trim().replace(/\s+/g, ' ').toLowerCase() }
 function validTime(value: string) { return /^(?:[01]\d|2[0-3]):[0-5]\d$/.test(value) }
 function stringField(value: unknown): string { return typeof value === 'string' ? value.trim() : '' }
+function legacyTime(value: unknown): string {
+  const time = stringField(value)
+  // Old UI saves H:mm as well as HH:mm. Canonicalize only the parsed copy,
+  // before validation, conflict checks, deduplication and receipt payloads.
+  return /^(?:[0-9]|[01]\d|2[0-3]):[0-5]\d$/.test(time) ? time.padStart(5, '0') : time
+}
 function minutes(value: string) { return Number(value.slice(0, 2)) * 60 + Number(value.slice(3, 5)) }
 function legacyKey(row: LegacyClass) {
   return JSON.stringify([normalizedCode(row.code), row.name.trim(), normalizedSection(row.section), normalizedTeacher(row.teacher), row.day, row.start, row.end])
@@ -45,8 +51,8 @@ function parseEntry(value: unknown, index: number): LegacyClass {
     section: stringField(row.sec),
     teacher: stringField(row.teacher),
     day: stringField(row.day),
-    start: stringField(row.start),
-    end: stringField(row.end),
+    start: legacyTime(row.start),
+    end: legacyTime(row.end),
   }
   const dayIndex = weekdays.indexOf(entry.day) + 1
   const meeting = { day: dayIndex, start: entry.start, end: entry.end }
