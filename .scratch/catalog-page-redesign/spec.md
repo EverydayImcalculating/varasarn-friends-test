@@ -131,3 +131,24 @@ Replaced the native top-only border (which changes color partway around each cor
 ### 2026-09-27 — Restore previous top border
 
 Owner preferred the preceding border over the full-corner trial. Restored the native `3px solid var(--purple-700)` top border and removed the curved pseudo-element. Toolbar, sorting, and review-filter behavior unchanged. `git diff --check` and production build passed (existing bundle-size warning). No commit or push.
+
+### 2026-09-27 — Screenshot follow-up acceptance plan
+
+Extend this issue with four focused fixes; preserve the native 3px card top border and existing tokens.
+
+| Requirement | Verification evidence |
+| --- | --- |
+| Clicking an active category returns to all categories, preserving search, reviewed filter and sort; All remains selected when clicked again | New rendered regression failed with 2 instead of 4 courses, then passed; search/reviewed/rating sort retained. Browser 60 → 214 and All aria-pressed true. |
+| Short landscape (orientation landscape, height ≤575px) uses a horizontal category row with the existing disclosure; contact moves into toolbar to avoid covering courses | Browser 852×393: toolbar 259px before → 135px after; full first card below bar; disclosure expands/scrolls/collapses. Contact opens/closes via new red/green regression. No horizontal overflow at 667×375, 852×393, 375×812 or 1280×900; portrait/desktop controls preserved. |
+| Longest sort label leaves space for the native arrow | Confirmed 14px right padding before, 38px after. Highest-rating option visually clear of arrow at desktop, landscape and portrait widths. |
+| LINE stays visible on hover/focus/active and dialog stays open | Reproduced fading green on hover while dialog remained mounted. Bootstrap hover/active background variables now keep it green: hovered rgb(0,153,0), dialog visible. Keyboard Tab focuses visible LINE link; destination retained in regression. Active color defined via Bootstrap; no external link opened. |
+
+One agent, no refactor; targeted regression tests first, full suite/build once after fixes.
+
+Outcome: fixed only these four items in App.vue/styles.css plus two behavioral tests. `npm test -- --run`: **139 passed in 17 files**. Build initially caught a test-only `get().exists()` type error; corrected to `find().exists()`, then catalog tests **11/11 passed** and `npm run build` passed with the existing >500kB chunk warning. `git diff --check` passed; browser logged no warnings/errors. Visual checks used dev-mock at `?catalog=large`; viewport override reset. Screenshot: `catalog-landscape-fixed.png` in the chat visualization directory. Unrelated working-tree changes preserved. No commit or push. Production Google-login acceptance and TEST-course ownership decisions remain unchanged.
+
+### 2026-09-27 — Owner refinement: floating contact and smaller search
+
+Supersedes the toolbar-contact placement above: restore the contact button at bottom right, icon-only at phone widths and short landscape heights, with desktop text retained. Keep back-to-top above it. Remove the duplicate toolbar contact control. Reduce catalog search typography and padding to a 44px field aligned with neighboring controls; retain a 44px clear target, labels, and search behavior. Verify rendered contact behavior and responsive layout at 375px, 852×393, and 1280px.
+
+Implemented and verified: updated contact regression failed on the duplicate toolbar control, then passed after restoring a single floating trigger; dialog open/close and LINE destination retained. Search measures 44px at all three checked widths; mobile/landscape contact is 48×48px with text hidden, desktop label remains visible. Landscape toolbar measures 122px and back-to-top stays above contact. Browser checks at 375×812, 852×393 and 1280×900 show no horizontal page overflow or console errors. `npm test -- --run`: 139/139 passed in 17 files. `npm run build` passed with the existing >500kB bundle warning. No commit or push; unrelated files untouched.

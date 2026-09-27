@@ -118,7 +118,7 @@ async function selectCategory(name: string, event: Event) {
   const button = event.currentTarget as HTMLElement | null
   updateScrollState()
   const wasStuck = toolbarStuck.value
-  categoryFilter.value = name
+  categoryFilter.value = categoryFilter.value === name ? '' : name
   categoriesExpanded.value = false
   await nextTick()
   button?.scrollIntoView?.({ block: 'nearest', inline: 'nearest', behavior: 'instant' })
@@ -928,7 +928,7 @@ onMounted(async () => {
             ><input
               v-model="searchTerm"
               type="search"
-              class="form-control form-control-lg shadow-sm"
+              class="form-control shadow-sm"
               placeholder="ค้นหารหัสวิชา หรือ ชื่อวิชา..."
               aria-label="ค้นหารหัสวิชา หรือ ชื่อวิชา"
               @focus="searchFocused = true"
@@ -987,7 +987,7 @@ onMounted(async () => {
                 {{ category.name }}<span v-if="catalogCountsAvailable" class="category-count">{{ categoryCounts[category.name] ?? 0 }}</span>
               </button>
             </div>
-            <button class="btn btn-outline-purple catalog-category-disclosure d-md-none" type="button"
+            <button class="btn btn-outline-purple catalog-category-disclosure" type="button"
               aria-controls="catalog-categories" :aria-expanded="categoriesExpanded" @click="categoriesExpanded = !categoriesExpanded">
               {{ categoriesExpanded ? 'ย่อหมวด' : 'ทุกหมวด' }}
               <i class="bi" :class="categoriesExpanded ? 'bi-chevron-up' : 'bi-chevron-down'" aria-hidden="true"></i>
@@ -1427,7 +1427,7 @@ onMounted(async () => {
       @click="contactOpen = !contactOpen"
     >
       <i class="bi bi-chat-heart-fill fs-5"></i
-      ><span class="d-none d-md-inline ms-1">แจ้งปัญหา/ติดต่อ</span>
+      ><span class="contact-button-label ms-1">แจ้งปัญหา/ติดต่อ</span>
     </button>
     <div
       v-if="signedIn && contactOpen"
